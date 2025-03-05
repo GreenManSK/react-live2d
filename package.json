@@ -40,7 +40,8 @@
     "build:docs": "storybook build",
     "generate:component": "npx generate-react-cli component",
     "prepare": "is-ci || husky",
-    "lint-staged": "lint-staged"
+    "lint-staged": "lint-staged",
+    "format": "prettier --write \"**/*.{ts,tsx,json}\""
   },
   "peerDependencies": {
     "react": ">=18.2.0",
