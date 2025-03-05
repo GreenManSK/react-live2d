@@ -1,6 +1,7 @@
 {
-  "name": "react-library-template",
+  "name": "react-live2d",
   "homepage": "https://morewings.github.io/react-library-template/",
+  "author": "GreenManSK <lukas.kurcik@gmail.com>",
   "private": false,
   "version": "0.1.0",
   "type": "module",
@@ -19,20 +20,10 @@
   },
   "keywords": [
     "react",
-    "template",
-    "react-testing-library",
-    "testing-library",
-    "eslint",
-    "npm",
-    "rollup",
-    "stylelint",
-    "library",
-    "package",
-    "vite",
-    "css-modules",
+    "live2d",
     "typescript"
   ],
-  "description": "Missing React, typescript NPM library creation template",
+  "description": "React library for use of Live 2D models",
   "scripts": {
     "dev": "vite",
     "clean:lib": "rm -rf dist",
