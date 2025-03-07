@@ -41,7 +41,8 @@
     "generate:component": "npx generate-react-cli component",
     "prepare": "is-ci || husky",
     "lint-staged": "lint-staged",
-    "format": "prettier --write \"**/*.{ts,tsx,json}\""
+    "format": "prettier --write \"**/*.{ts,tsx,json,js,cjs}\"",
+    "setup": "node script/setup.cjs"
   },
   "peerDependencies": {
     "react": ">=18.2.0",
