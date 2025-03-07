@@ -1,7 +1,6 @@
 import type {FC} from 'react';
 import {useState, useEffect} from 'react';
 
-import {Counter} from '@/lib';
 import './index.css';
 import {Live2DRunner} from '@/lib/Live2DRunner';
 import {useTicker} from '@/lib/Ticker/useTicker';
@@ -33,12 +32,7 @@ const App: FC = () => {
         };
     }, []);
 
-    return (
-        <div>
-            <Counter />
-            {isScriptLoaded && <Live2D />}
-        </div>
-    );
+    return <div>{isScriptLoaded && <Live2D />}</div>;
 };
 
 export default App;
