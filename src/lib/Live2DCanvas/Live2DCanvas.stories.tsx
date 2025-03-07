@@ -15,14 +15,14 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {
-    render: args => {
+    render: (args) => {
         return <Live2DCanvas {...args} />;
     },
     args: {},
 };
 
 export const WithCode: Story = {
-    render: args => {
+    render: (args) => {
         // here comes the code
         return <Live2DCanvas {...args} />;
     },

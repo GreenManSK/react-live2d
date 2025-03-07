@@ -15,14 +15,14 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {
-    render: args => {
+    render: (args) => {
         return <TemplateName {...args} />;
     },
     args: {},
 };
 
 export const WithCode: Story = {
-    render: args => {
+    render: (args) => {
         // here comes the code
         return <TemplateName {...args} />;
     },

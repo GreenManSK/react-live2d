@@ -48,7 +48,7 @@ export const Live2DRunner = ({cubismOptions, ticker, children}: PropsWithChildre
         return () => {
             if (CubismFramework.isStarted()) {
                 CubismFramework.dispose();
-                canvasList.current.forEach(canvas => canvas.dispose());
+                canvasList.current.forEach((canvas) => canvas.dispose());
                 setIsStarted(false);
             }
         };
@@ -58,7 +58,7 @@ export const Live2DRunner = ({cubismOptions, ticker, children}: PropsWithChildre
         let shouldStop = false;
         const render = () => {
             ticker.updateTime();
-            canvasList.current.forEach(canvas => canvas.render(ticker.getDeltaTime()));
+            canvasList.current.forEach((canvas) => canvas.render(ticker.getDeltaTime()));
             if (!shouldStop) {
                 render();
             }

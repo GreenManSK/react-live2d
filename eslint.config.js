@@ -98,7 +98,7 @@ export default [
                     trailingComma: 'es5',
                     bracketSpacing: false,
                     jsxBracketSameLine: true,
-                    arrowParens: 'avoid',
+                    arrowParens: 'always',
                 },
             ],
             /* Required by vite */
@@ -119,7 +119,6 @@ export default [
                     args: 'after-used',
                 },
             ],
-            'arrow-parens': ['off', 'always'], // Ensures ESLint keeps the parentheses
         },
     },
     /* Allow devDependencies imports for tests and config files */
