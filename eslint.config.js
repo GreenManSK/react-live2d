@@ -189,6 +189,6 @@ export default [
         },
     },
     {
-        ignores: ['**/*.snap'],
+        ignores: ['**/*.snap', 'CubismWebFramework/**'],
     },
 ];

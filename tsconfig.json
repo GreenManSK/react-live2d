@@ -23,7 +23,8 @@
 
     /* Aliases */
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@cubism/*": ["./CubismWebFramework/src/*"]
     }
   },
   "include": ["src", "templates/**/*.ts", "templates/**/*.tsx"],

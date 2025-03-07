@@ -20,5 +20,5 @@
   "plugins": [
     "stylelint-order"
   ],
-  "ignoreFiles": ["**/*.snap"]
+  "ignoreFiles": ["**/*.snap", "CubismWebFramework/**"]
 }
