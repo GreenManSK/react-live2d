@@ -3,13 +3,21 @@ import {useState, useEffect} from 'react';
 
 import {Counter} from '@/lib';
 import './index.css';
-import {Live2DCanvas} from '@/lib/Live2DCanvas';
+import {Live2DRunner} from '@/lib/Live2DRunner';
 import {useTicker} from '@/lib/Ticker/useTicker';
+import {Live2DCanvas} from '@/lib/Live2DCanvas';
+
+const Live2D: FC = () => {
+    const ticker = useTicker();
+    return (
+        <Live2DRunner ticker={ticker}>
+            <Live2DCanvas width={500} height={500}></Live2DCanvas>
+        </Live2DRunner>
+    );
+};
 
 const App: FC = () => {
     const [isScriptLoaded, setIsScriptLoaded] = useState(false);
-
-    const ticker = useTicker();
 
     useEffect(() => {
         const script = document.createElement('script');
@@ -28,7 +36,7 @@ const App: FC = () => {
     return (
         <div>
             <Counter />
-            {isScriptLoaded && <Live2DCanvas ticker={ticker} />}
+            {isScriptLoaded && <Live2D />}
         </div>
     );
 };
