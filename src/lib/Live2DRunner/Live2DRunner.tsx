@@ -4,7 +4,7 @@ import {CubismFramework, Option as CubismOption, LogLevel} from '@cubism/live2dc
 import * as CubismRenderingWebgl from '@cubism/rendering/cubismrenderer_webgl';
 
 import type {ITicker} from '../Ticker/ticker.interface';
-import type {ILive2DCanvas} from '../Live2DCanvas/Live2DCanvas.interface';
+import type {ILive2DCanvas} from '../cubism/Live2DCanvas.interface';
 
 if (CubismRenderingWebgl) {
     // Needed for CubismFramework.dispose to work correctly
@@ -29,11 +29,12 @@ const Live2DRunnerContext = createContext<Live2DRunnerContext>({
 export const useLive2DRunnerContext = () => useContext(Live2DRunnerContext);
 
 export const Live2DRunner = ({cubismOptions, ticker, children}: PropsWithChildren<Live2DRunnerProps>) => {
-    const [isStarted, setIsStarted] = useState(false);
+    const [isStarted, setIsStarted] = useState(CubismFramework.isStarted());
     const canvasList = useRef<ILive2DCanvas[]>([]);
 
     useEffect(() => {
         if (CubismFramework.isStarted()) {
+            setIsStarted(true);
             return;
         }
         const finalCubismOptions = cubismOptions || new CubismOption();
@@ -45,13 +46,13 @@ export const Live2DRunner = ({cubismOptions, ticker, children}: PropsWithChildre
         CubismFramework.initialize();
         setIsStarted(true);
 
-        return () => {
-            if (CubismFramework.isStarted()) {
-                CubismFramework.dispose();
-                canvasList.current.forEach((canvas) => canvas.dispose());
-                setIsStarted(false);
-            }
-        };
+        // return () => {
+        //     // TODO: maybe will cause issues
+        //     // if (CubismFramework.isStarted()) {
+        //     //     CubismFramework.dispose();
+        //     //     setIsStarted(false);
+        //     // }
+        // };
     }, [cubismOptions]);
 
     const renderLoop = useCallback(() => {
@@ -60,7 +61,7 @@ export const Live2DRunner = ({cubismOptions, ticker, children}: PropsWithChildre
             ticker.updateTime();
             canvasList.current.forEach((canvas) => canvas.render(ticker.getDeltaTime()));
             if (!shouldStop) {
-                render();
+                requestAnimationFrame(render);
             }
         };
         requestAnimationFrame(render);
