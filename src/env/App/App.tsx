@@ -71,6 +71,20 @@ const Live2DDataSetter: FC<Live2DDataSetterProps> = ({setExpressions, setMotions
             window.removeEventListener('click', handleMouseMove);
         };
     }, [motionManager]);
+
+    useEffect(() => {
+        // Create timer here for every 100ms
+        const timer = setInterval(() => {
+            if (!motionManager) {
+                return;
+            }
+            motionManager.setLipValue(Math.random(), 10);
+        }, 1000);
+        return () => {
+            clearInterval(timer);
+        };
+    }, [motionManager]);
+
     return <></>;
 };
 

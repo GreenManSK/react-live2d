@@ -39,7 +39,11 @@ export class Live2DModelMotionManager {
     }
 
     // speed = 0 means instant
-    public setLookTarget(x: number, y: number, speed = 0): void {
-        this.modelManager.setLookTarget(x, y, speed);
+    public setLookTarget(x: number, y: number, speedPerS = 0): void {
+        this.modelManager.setLookTarget(x, y, speedPerS);
+    }
+
+    public setLipValue(value: number, speedPerS = 0): void {
+        this.modelManager.setLipValue(value, speedPerS);
     }
 }

@@ -36,6 +36,10 @@ export class Live2DModelManager {
     private lookTargetY = 0.0;
     private lookSpeed = 0.0;
 
+    private currentLipValue = 0.0;
+    private lipValue = 0.0;
+    private lipSpeed = 0.0;
+
     public constructor(
         public readonly modelJsonPath: string,
         public readonly settings: ICubismModelSetting,
@@ -139,13 +143,14 @@ export class Live2DModelManager {
         }
 
         if (this.model.lipsync) {
-            // TODO: LipSync
-            // let value = 0.0; // リアルタイムでリップシンクを行う場合、システムから音量を取得して、0~1の範囲で値を入力します。
-            // this._wavFileHandler.update(deltaTimeSecondsSeconds);
-            // value = this._wavFileHandler.getRms();
-            // for (let i = 0; i < this._lipSyncIds.getSize(); ++i) {
-            //     this._model.addParameterValueById(this._lipSyncIds.at(i), value, 0.8);
-            // }
+            // TODO: LipSync manager .getLipValue(deltaTimeSeconds)
+            this.currentLipValue =
+                this.lipSpeed !== 0
+                    ? this.currentLipValue + (this.lipValue - this.currentLipValue) * this.lipSpeed * deltaTimeSeconds
+                    : this.lipValue;
+            for (let i = 0; i < this.lipSyncIds.getSize(); ++i) {
+                this.model.model.addParameterValueById(this.lipSyncIds.at(i), this.currentLipValue, 0.8);
+            }
         }
 
         if (this.model.pose != null) {
@@ -184,6 +189,11 @@ export class Live2DModelManager {
         this.lookTargetX = x;
         this.lookTargetY = y;
         this.lookSpeed = speed;
+    }
+
+    public setLipValue(value: number, speed: number) {
+        this.lipValue = value;
+        this.lipSpeed = speed;
     }
 
     private resolveFilePath(fileName: string): string {
