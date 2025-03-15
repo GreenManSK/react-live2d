@@ -62,7 +62,7 @@ const Live2DDataSetter: FC<Live2DDataSetterProps> = ({setExpressions, setMotions
             }
             const x = event.clientX + window.scrollX;
             const y = event.clientY + window.scrollY;
-            motionManager.setLookTarget(x, y);
+            motionManager.setLookTarget(x, y, 5);
         };
 
         window.addEventListener('click', handleMouseMove);

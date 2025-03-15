@@ -38,7 +38,8 @@ export class Live2DModelMotionManager {
         return this.modelManager.getMotionGroups();
     }
 
-    public setLookTarget(x: number, y: number): void {
-        this.modelManager.setLookTarget(x, y);
+    // speed = 0 means instant
+    public setLookTarget(x: number, y: number, speed = 0): void {
+        this.modelManager.setLookTarget(x, y, speed);
     }
 }

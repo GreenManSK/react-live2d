@@ -30,8 +30,11 @@ export class Live2DModelManager {
     private idParamEyeBallY: CubismIdHandle;
     private idParamBodyAngleX: CubismIdHandle;
 
+    private currentLookTargetX = 0.0;
+    private currentLookTargetY = 0.0;
     private lookTargetX = 0.0;
     private lookTargetY = 0.0;
+    private lookSpeed = 0.0;
 
     public constructor(
         public readonly modelJsonPath: string,
@@ -87,7 +90,6 @@ export class Live2DModelManager {
             projection.scale(canvasHeight / canvasWidth, 1.0);
         }
 
-        // 必要があればここで乗算
         if (viewMatrix != null) {
             projection.multiplyByMatrix(viewMatrix);
         }
@@ -107,17 +109,25 @@ export class Live2DModelManager {
             this.model.expressionManager.updateMotion(this.model.model, deltaTimeSeconds);
         }
 
-        const lookX = this.lookTargetX - canvasX;
-        const lookY = this.lookTargetY - canvasY;
-        const transformedLookX = viewMatrix.invertTransformX(deviceToCanvas.transformX(lookX));
-        const transformedLookY = viewMatrix.invertTransformY(deviceToCanvas.transformY(lookY));
+        if (this.lookSpeed !== 0) {
+            this.currentLookTargetX +=
+                (this.lookTargetX - canvasX - this.currentLookTargetX) * this.lookSpeed * deltaTimeSeconds;
+            this.currentLookTargetY +=
+                (this.lookTargetY - canvasY - this.currentLookTargetY) * this.lookSpeed * deltaTimeSeconds;
+        } else {
+            this.currentLookTargetX = this.lookTargetX - canvasX;
+            this.currentLookTargetY = this.lookTargetY - canvasY;
+        }
+
+        const transformedLookX = viewMatrix.invertTransformX(deviceToCanvas.transformX(this.currentLookTargetX));
+        const transformedLookY = viewMatrix.invertTransformY(deviceToCanvas.transformY(this.currentLookTargetY));
 
         this.model.model.addParameterValueById(this.idParamAngleX, transformedLookX * 30);
         this.model.model.addParameterValueById(this.idParamAngleY, transformedLookY * 30);
         this.model.model.addParameterValueById(this.idParamAngleZ, transformedLookX * transformedLookY * -30);
         this.model.model.addParameterValueById(this.idParamBodyAngleX, transformedLookX * 10);
 
-        this.model.model.addParameterValueById(this.idParamEyeBallX, transformedLookX); // -1から1の値を加える
+        this.model.model.addParameterValueById(this.idParamEyeBallX, transformedLookX);
         this.model.model.addParameterValueById(this.idParamEyeBallY, transformedLookY);
 
         if (this.model.breath) {
@@ -170,9 +180,10 @@ export class Live2DModelManager {
         return this.model;
     }
 
-    public setLookTarget(x: number, y: number) {
+    public setLookTarget(x: number, y: number, speed: number) {
         this.lookTargetX = x;
         this.lookTargetY = y;
+        this.lookSpeed = speed;
     }
 
     private resolveFilePath(fileName: string): string {
