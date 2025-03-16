@@ -8,7 +8,7 @@ import {Live2DTextureManager} from './Live2DTextureManager';
 export class Live2DCanvasManager implements ILive2DCanvas {
     public readonly textureManager: Live2DTextureManager;
     public viewMatrix: CubismViewMatrix;
-    public readonly deviceToCanvas: CubismMatrix44;
+    public deviceToCanvas: CubismMatrix44;
 
     private frameBuffer: WebGLFramebuffer;
     private models = new Set<Live2DModelManager>();
@@ -26,25 +26,14 @@ export class Live2DCanvasManager implements ILive2DCanvas {
 
     public setup(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
-        const {width, height} = this.canvas;
-        const {left, right, bottom, top} = this.getCanvasBounds();
 
-        this.updateViewMatrix();
-        this.deviceToCanvas.loadIdentity();
-        if (width > height) {
-            const screenW: number = Math.abs(right - left);
-            this.deviceToCanvas.scaleRelative(screenW / width, -screenW / width);
-        } else {
-            const screenH: number = Math.abs(top - bottom);
-            this.deviceToCanvas.scaleRelative(screenH / height, -screenH / height);
-        }
-        this.deviceToCanvas.translateRelative(-width * 0.5, -height * 0.5);
+        this.updateMatrices();
 
         this.createShader();
     }
 
     public render(deltaTime: number) {
-        this.updateViewMatrix();
+        this.updateMatrices();
         this.gl.clearColor(0, 0, 0, 0);
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.depthFunc(this.gl.LEQUAL);
@@ -87,7 +76,7 @@ export class Live2DCanvasManager implements ILive2DCanvas {
         this.models.delete(model);
     }
 
-    private updateViewMatrix() {
+    private updateMatrices() {
         if (!this.canvas) {
             return;
         }
@@ -98,10 +87,22 @@ export class Live2DCanvasManager implements ILive2DCanvas {
         }
 
         this.lastCanvasRatio = ratio;
+        this.viewMatrix = new CubismViewMatrix();
         const {left, right, bottom, top} = this.getCanvasBounds();
         this.viewMatrix.setScreenRect(left, right, bottom, top);
         this.viewMatrix.scale(1.0, 1.0);
         this.viewMatrix.setMaxScreenRect(-2.0, 2.0, -2.0, 2.0);
+
+        this.deviceToCanvas = new CubismMatrix44();
+        this.deviceToCanvas.loadIdentity();
+        if (width > height) {
+            const screenW: number = Math.abs(right - left);
+            this.deviceToCanvas.scaleRelative(screenW / width, -screenW / width);
+        } else {
+            const screenH: number = Math.abs(top - bottom);
+            this.deviceToCanvas.scaleRelative(screenH / height, -screenH / height);
+        }
+        this.deviceToCanvas.translateRelative(-width * 0.5, -height * 0.5);
     }
 
     private getCanvasBounds() {

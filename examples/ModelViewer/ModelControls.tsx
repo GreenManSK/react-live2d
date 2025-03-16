@@ -1,13 +1,65 @@
 import {useLive2DModelContext} from '@react-live2d';
+import {useEffect, useState} from 'react';
 
 export const ModelControls = () => {
     const {motionManager} = useLive2DModelContext();
+
+    const [lookAtMouse, setLookAtMouse] = useState(true);
+    const [lookAtX, setLookAtX] = useState(0);
+    const [lookAtY, setLookAtY] = useState(0);
+
+    const [bodyFaceMouse, setBodyFaceMouse] = useState(true);
+    const [bodyX, setBodyX] = useState(0);
+    const [bodyY, setBodyY] = useState(0);
+
+    useEffect(() => {
+        if (!motionManager || lookAtMouse) {
+            return;
+        }
+        motionManager.setLookTargetRelative(lookAtX, lookAtY, 0);
+    }, [motionManager, lookAtX, lookAtY, lookAtMouse]);
+
+    useEffect(() => {
+        if (!motionManager || bodyFaceMouse) {
+            return;
+        }
+        motionManager.setBodyOrientationTargetRelative(bodyX, bodyY, 0);
+    }, [motionManager, bodyX, bodyY, bodyFaceMouse]);
+
+    useEffect(() => {
+        if (!motionManager) {
+            return;
+        }
+        const handleMouseMove = (event: MouseEvent) => {
+            if (!motionManager) {
+                return;
+            }
+            const x = event.clientX + window.scrollX;
+            const y = event.clientY + window.scrollY;
+            if (lookAtMouse) {
+                motionManager.setLookTarget(x, y, 0);
+            }
+            if (bodyFaceMouse) {
+                motionManager.setBodyOrientationTarget(x, y, 0);
+            }
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+        };
+    }, [motionManager, lookAtMouse, bodyFaceMouse]);
+
     if (!motionManager) {
         return null;
     }
 
     const expressions = motionManager.getExpressionsList();
     const motionGroups = [...motionManager.getMotionGroups().entries()];
+
+    // TODO: Add scale sliders
+    // TODO: Add position sliders
 
     return (
         <>
@@ -42,6 +94,94 @@ export const ModelControls = () => {
                         </div>
                     </div>
                 ))}
+            </div>
+            <h3 className="block text-lg font-bold">Look</h3>
+            <div className="flex flex-wrap gap-2">
+                <label className="flex items-center gap-2">
+                    <input
+                        type="checkbox"
+                        checked={lookAtMouse}
+                        onChange={(e) => {
+                            const value = e.target.checked;
+                            setLookAtMouse(value);
+                        }}
+                    />
+                    Follow mouse
+                </label>
+                <label className="flex items-center gap-2">
+                    X:
+                    <input
+                        type="range"
+                        min={-1}
+                        max={1}
+                        step={0.01}
+                        value={lookAtX}
+                        onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            setLookAtX(value);
+                        }}
+                    />
+                    {lookAtX}
+                </label>
+                <label className="flex items-center gap-2">
+                    Y:
+                    <input
+                        type="range"
+                        min={-1}
+                        max={1}
+                        step={0.01}
+                        value={lookAtY}
+                        onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            setLookAtY(value);
+                        }}
+                    />
+                    {lookAtY}
+                </label>
+            </div>
+            <h3 className="block text-lg font-bold">Body orientation</h3>
+            <div className="flex flex-wrap gap-2">
+                <label className="flex items-center gap-2">
+                    <input
+                        type="checkbox"
+                        checked={bodyFaceMouse}
+                        onChange={(e) => {
+                            const value = e.target.checked;
+                            setBodyFaceMouse(value);
+                        }}
+                    />
+                    Follow mouse
+                </label>
+                <label className="flex items-center gap-2">
+                    X:
+                    <input
+                        type="range"
+                        min={-1}
+                        max={1}
+                        step={0.01}
+                        value={bodyX}
+                        onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            setBodyX(value);
+                        }}
+                    />
+                    {bodyX}
+                </label>
+                <label className="flex items-center gap-2">
+                    Y:
+                    <input
+                        type="range"
+                        min={-1}
+                        max={1}
+                        step={0.01}
+                        value={bodyY}
+                        onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            setBodyY(value);
+                        }}
+                    />
+                    {bodyY}
+                </label>
             </div>
         </>
     );

@@ -14,6 +14,12 @@ import type {CubismViewMatrix} from '@cubism/math/cubismviewmatrix';
 import {Live2DCubismUserModel} from '../cubism/Live2DCubismUserModel';
 import type {Live2DTextureManager} from './Live2DTextureManager';
 
+type Orientation = {
+    x: number;
+    y: number;
+    isRelative?: boolean;
+};
+
 export class Live2DModelManager {
     private model: Live2DCubismUserModel;
     private expressions = new Map<string, ACubismMotion>();
@@ -30,11 +36,27 @@ export class Live2DModelManager {
     private idParamEyeBallY: CubismIdHandle;
     private idParamBodyAngleX: CubismIdHandle;
 
-    private currentLookTargetX = 0.0;
-    private currentLookTargetY = 0.0;
-    private lookTargetX = 0.0;
-    private lookTargetY = 0.0;
     private lookSpeed = 0.0;
+    private currentLookTarget: Orientation = {
+        x: 0.0,
+        y: 0.0,
+    };
+    private lookTarget: Orientation = {
+        x: 0.0,
+        y: 0.0,
+        isRelative: false,
+    };
+
+    private bodyOrientationSpeed = 0.0;
+    private currentBodyOrientationTarget: Orientation = {
+        x: 0.0,
+        y: 0.0,
+    };
+    private bodyOrientationTarget: Orientation = {
+        x: 0.0,
+        y: 0.0,
+        isRelative: false,
+    };
 
     private currentLipValue = 0.0;
     private lipValue = 0.0;
@@ -83,7 +105,6 @@ export class Live2DModelManager {
         canvasX: number,
         canvasY: number
     ) {
-        console.log('Model', this.model.model.getCanvasWidth(), canvasWidth, canvasHeight);
         const deltaTimeSeconds = deltaTime / 1000.0;
 
         const projection = new CubismMatrix44();
@@ -114,23 +135,32 @@ export class Live2DModelManager {
             this.model.expressionManager.updateMotion(this.model.model, deltaTimeSeconds);
         }
 
-        if (this.lookSpeed !== 0) {
-            this.currentLookTargetX +=
-                (this.lookTargetX - canvasX - this.currentLookTargetX) * this.lookSpeed * deltaTimeSeconds;
-            this.currentLookTargetY +=
-                (this.lookTargetY - canvasY - this.currentLookTargetY) * this.lookSpeed * deltaTimeSeconds;
-        } else {
-            this.currentLookTargetX = this.lookTargetX - canvasX;
-            this.currentLookTargetY = this.lookTargetY - canvasY;
-        }
+        const {transformedX: transformedBodyX, transformedY: transformedBodyY} = this.getTransformedOrientation(
+            deltaTimeSeconds,
+            viewMatrix,
+            deviceToCanvas,
+            canvasX,
+            canvasY,
+            this.currentBodyOrientationTarget,
+            this.bodyOrientationTarget,
+            this.bodyOrientationSpeed
+        );
 
-        const transformedLookX = viewMatrix.invertTransformX(deviceToCanvas.transformX(this.currentLookTargetX));
-        const transformedLookY = viewMatrix.invertTransformY(deviceToCanvas.transformY(this.currentLookTargetY));
+        this.model.model.addParameterValueById(this.idParamAngleX, transformedBodyX * 30);
+        this.model.model.addParameterValueById(this.idParamAngleY, transformedBodyY * 30);
+        this.model.model.addParameterValueById(this.idParamAngleZ, transformedBodyX * transformedBodyY * -30);
+        this.model.model.addParameterValueById(this.idParamBodyAngleX, transformedBodyX * 10);
 
-        this.model.model.addParameterValueById(this.idParamAngleX, transformedLookX * 30);
-        this.model.model.addParameterValueById(this.idParamAngleY, transformedLookY * 30);
-        this.model.model.addParameterValueById(this.idParamAngleZ, transformedLookX * transformedLookY * -30);
-        this.model.model.addParameterValueById(this.idParamBodyAngleX, transformedLookX * 10);
+        const {transformedX: transformedLookX, transformedY: transformedLookY} = this.getTransformedOrientation(
+            deltaTimeSeconds,
+            viewMatrix,
+            deviceToCanvas,
+            canvasX,
+            canvasY,
+            this.currentLookTarget,
+            this.lookTarget,
+            this.lookSpeed
+        );
 
         this.model.model.addParameterValueById(this.idParamEyeBallX, transformedLookX);
         this.model.model.addParameterValueById(this.idParamEyeBallY, transformedLookY);
@@ -187,14 +217,80 @@ export class Live2DModelManager {
     }
 
     public setLookTarget(x: number, y: number, speed: number) {
-        this.lookTargetX = x;
-        this.lookTargetY = y;
+        this.lookTarget = {
+            x,
+            y,
+            isRelative: false,
+        };
         this.lookSpeed = speed;
+    }
+
+    public setLookTargetRelative(x: number, y: number, speed: number) {
+        this.lookTarget = {
+            x,
+            y,
+            isRelative: true,
+        };
+        this.lookSpeed = speed;
+    }
+
+    public setBodyOrientationTarget(x: number, y: number, speed: number) {
+        this.bodyOrientationTarget = {
+            x,
+            y,
+            isRelative: false,
+        };
+        this.bodyOrientationSpeed = speed;
+    }
+
+    public setBodyOrientationTargetRelative(x: number, y: number, speed: number) {
+        this.bodyOrientationTarget = {
+            x,
+            y,
+            isRelative: true,
+        };
+        this.bodyOrientationSpeed = speed;
     }
 
     public setLipValue(value: number, speed: number) {
         this.lipValue = value;
         this.lipSpeed = speed;
+    }
+
+    private getTransformedOrientation(
+        deltaTimeSeconds: number,
+        viewMatrix: CubismViewMatrix,
+        deviceToCanvas: CubismMatrix44,
+        canvasX: number,
+        canvasY: number,
+        currentOrientation: Orientation,
+        targetOrientation: Orientation,
+        speed: number
+    ) {
+        let goalX = 0;
+        let goalY = 0;
+        if (targetOrientation.isRelative) {
+            const absoluteX = deviceToCanvas.invertTransformX(viewMatrix.transformX(targetOrientation.x));
+            const absoluteY = deviceToCanvas.invertTransformY(viewMatrix.transformY(targetOrientation.y));
+            goalX = absoluteX;
+            goalY = absoluteY;
+        } else {
+            goalX = targetOrientation.x - canvasX;
+            goalY = targetOrientation.y - canvasY;
+        }
+
+        if (speed !== 0) {
+            currentOrientation.x = currentOrientation.x + (goalX - currentOrientation.x) * speed * deltaTimeSeconds;
+            currentOrientation.y = currentOrientation.y + (goalY - currentOrientation.y) * speed * deltaTimeSeconds;
+        } else {
+            currentOrientation.x = goalX;
+            currentOrientation.y = goalY;
+        }
+
+        const transformedX = viewMatrix.invertTransformX(deviceToCanvas.transformX(currentOrientation.x));
+        const transformedY = viewMatrix.invertTransformY(deviceToCanvas.transformY(currentOrientation.y));
+        console.log('transformedX', transformedX, transformedY);
+        return {transformedX, transformedY};
     }
 
     private resolveFilePath(fileName: string): string {
