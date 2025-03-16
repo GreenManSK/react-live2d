@@ -29,7 +29,7 @@ const ModelViewer = () => {
         <Live2DRunner ticker={ticker}>
             <Live2DCanvas>
                 <div className="flex max-h-screen min-h-screen flex-row">
-                    <div className="flex w-96 items-center justify-center bg-blue-800 text-white">
+                    <div className="flex max-h-screen w-96 overflow-y-scroll bg-blue-800 text-white">
                         <ModelPicker />
                     </div>
                     <div

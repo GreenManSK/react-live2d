@@ -1,17 +1,10 @@
 import type {PropsWithChildren} from 'react';
-import {createContext, useContext, useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 import {Live2DModelManager} from '../cubism/Live2DModelManager';
 import {Live2DModelMotionManager} from '../cubism/Live2DModelMotionManager';
 import {useLive2DCanvasContext} from '../Live2DCanvas/useLive2DCanvasContext';
-
-export type Live2DModelContext = {
-    motionManager?: Live2DModelMotionManager;
-};
-
-export const Live2DModelContext = createContext<Live2DModelContext>({});
-
-export const useLive2DModelContext = () => useContext(Live2DModelContext);
+import {Live2DModelContext} from './useLive2DModelContext';
 
 export type Props = {
     modelJsonPath: string;

@@ -224,16 +224,19 @@ export class Live2DModelManager {
         return new Promise((resolve) => {
             const fetchPromises: Promise<void>[] = [];
             for (let i = 0; i < this.settings.getExpressionCount(); i++) {
-                const expressionName = this.settings.getExpressionFileName(i);
+                const expressionName = this.settings.getExpressionName(i);
+                const expressionFileName = this.settings.getExpressionFileName(i);
                 fetchPromises.push(
-                    Live2DModelManager.fetchArrayBuffer(this.resolveFilePath(expressionName)).then((arrayBuffer) => {
-                        const expression = this.model.loadExpression(
-                            arrayBuffer,
-                            arrayBuffer.byteLength,
-                            expressionName
-                        );
-                        this.expressions.set(expressionName, expression);
-                    })
+                    Live2DModelManager.fetchArrayBuffer(this.resolveFilePath(expressionFileName)).then(
+                        (arrayBuffer) => {
+                            const expression = this.model.loadExpression(
+                                arrayBuffer,
+                                arrayBuffer.byteLength,
+                                expressionName
+                            );
+                            this.expressions.set(expressionName, expression);
+                        }
+                    )
                 );
             }
             Promise.all(fetchPromises).then(() => resolve());
