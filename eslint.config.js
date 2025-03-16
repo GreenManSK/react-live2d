@@ -130,6 +130,7 @@ export default [
             '**/setupTests.ts',
             '**/*.stories.*',
             '*.config.{js,ts}',
+            'examples/*.{js,jsx,ts,tsx}',
         ],
         plugins: {
             import: pluginImport,
