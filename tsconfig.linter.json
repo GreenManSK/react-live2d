@@ -4,6 +4,7 @@
     "**/*.stories.*",
     "*.config.*",
     "src",
+    "examples",
     ".storybook/*.ts",
     ".eslintrc.cjs",
     "templates/**/*.ts",

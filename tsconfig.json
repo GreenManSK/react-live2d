@@ -23,11 +23,11 @@
 
     /* Aliases */
     "paths": {
-      "@/*": ["./src/*"],
+      "@react-live2d/*": ["./src/lib/*"],
       "@cubism/*": ["./CubismWebFramework/src/*"]
     }
   },
-  "include": ["src", "templates/**/*.ts", "templates/**/*.tsx"],
+  "include": ["src", "templates/**/*.ts", "templates/**/*.tsx", "examples"],
   "exclude": ["**/*.stories.*"],
   "references": [{"path": "./tsconfig.node.json"}]
 }

@@ -26,8 +26,10 @@
   "description": "React library for use of Live 2D models",
   "scripts": {
     "dev": "vite",
+    "dev:examples": "vite --config vite.examples.config.ts",
     "clean:lib": "rm -rf dist",
     "build:lib": "vite build",
+    "build:examples": "vite build --config vite.examples.config.ts",
     "build": "run-s clean:lib build:lib",
     "lint:code": "eslint src/** --report-unused-disable-directives",
     "fix:code": "run-s 'lint:code --fix'",

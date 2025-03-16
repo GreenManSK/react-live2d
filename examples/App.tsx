@@ -136,7 +136,7 @@ const App: FC = () => {
     }, []);
 
     const models = ['Haru', 'Hiyori', 'Mao', 'Mark', 'Natori', 'Rice', 'Wanko', 'fern', 'mikumiku', 'L2DZeroVS'];
-    const [modelJson, setModelJson] = useState('public/models/Haru/Haru.model3.json');
+    const [modelJson, setModelJson] = useState('models/Haru/Haru.model3.json');
 
     return (
         <div>
@@ -145,11 +145,11 @@ const App: FC = () => {
             </div>
             <div>
                 {models.map((model) => (
-                    <button key={model} onClick={() => setModelJson(`public/models/${model}/${model}.model3.json`)}>
+                    <button key={model} onClick={() => setModelJson(`models/${model}/${model}.model3.json`)}>
                         {model}
                     </button>
                 ))}
-                <button onClick={() => setModelJson('public/models/shizuku/shizuku.model.json')}>Shizuku Old</button>
+                <button onClick={() => setModelJson('models/shizuku/shizuku.model.json')}>Shizuku Old</button>
             </div>
             {isScriptLoaded && <Live2D modelJson={modelJson} />}
         </div>
@@ -159,8 +159,8 @@ const App: FC = () => {
 const App2 = () => {
     return (
         <>
+            <h1>Live2D Example</h1>
             <App />
-            {/* <App /> */}
         </>
     );
 };
