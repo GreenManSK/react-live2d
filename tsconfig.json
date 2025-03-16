@@ -23,7 +23,7 @@
 
     /* Aliases */
     "paths": {
-      "@react-live2d/*": ["./src/lib/*"],
+      "@react-live2d": ["./src/lib/"],
       "@cubism/*": ["./CubismWebFramework/src/*"]
     }
   },

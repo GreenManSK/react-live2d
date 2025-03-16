@@ -7,13 +7,15 @@ import {Live2DTextureManager} from './Live2DTextureManager';
 
 export class Live2DCanvasManager implements ILive2DCanvas {
     public readonly textureManager: Live2DTextureManager;
-    public readonly viewMatrix: CubismViewMatrix;
+    public viewMatrix: CubismViewMatrix;
     public readonly deviceToCanvas: CubismMatrix44;
 
     private frameBuffer: WebGLFramebuffer;
     private models = new Set<Live2DModelManager>();
     private shader: WebGLProgram | null = null;
     private canvas?: HTMLCanvasElement;
+
+    private lastCanvasRatio = 0;
 
     public constructor(private readonly gl: WebGLRenderingContext) {
         this.textureManager = new Live2DTextureManager(gl);
@@ -25,16 +27,9 @@ export class Live2DCanvasManager implements ILive2DCanvas {
     public setup(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
         const {width, height} = this.canvas;
+        const {left, right, bottom, top} = this.getCanvasBounds();
 
-        const ratio = width / height;
-        const left = -ratio;
-        const right = ratio;
-        const bottom = -1.0;
-        const top = 1.0;
-        this.viewMatrix.setScreenRect(left, right, bottom, top);
-        this.viewMatrix.scale(1.0, 1.0);
-        this.viewMatrix.setMaxScreenRect(-2.0, 2.0, -2.0, 2.0);
-
+        this.updateViewMatrix();
         this.deviceToCanvas.loadIdentity();
         if (width > height) {
             const screenW: number = Math.abs(right - left);
@@ -49,6 +44,7 @@ export class Live2DCanvasManager implements ILive2DCanvas {
     }
 
     public render(deltaTime: number) {
+        this.updateViewMatrix();
         this.gl.clearColor(0, 0, 0, 0);
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.depthFunc(this.gl.LEQUAL);
@@ -89,6 +85,36 @@ export class Live2DCanvasManager implements ILive2DCanvas {
 
     public removeModel(model: Live2DModelManager) {
         this.models.delete(model);
+    }
+
+    private updateViewMatrix() {
+        if (!this.canvas) {
+            return;
+        }
+        const {width, height} = this.canvas;
+        const ratio = width / height;
+        if (this.lastCanvasRatio === ratio) {
+            return;
+        }
+
+        this.lastCanvasRatio = ratio;
+        const {left, right, bottom, top} = this.getCanvasBounds();
+        this.viewMatrix.setScreenRect(left, right, bottom, top);
+        this.viewMatrix.scale(1.0, 1.0);
+        this.viewMatrix.setMaxScreenRect(-2.0, 2.0, -2.0, 2.0);
+    }
+
+    private getCanvasBounds() {
+        if (!this.canvas) {
+            return {left: 0, right: 0, bottom: 0, top: 0};
+        }
+        const {width, height} = this.canvas;
+        const ratio = width / height;
+        const left = -ratio;
+        const right = ratio;
+        const bottom = -1.0;
+        const top = 1.0;
+        return {left, right, bottom, top};
     }
 
     private createShader() {

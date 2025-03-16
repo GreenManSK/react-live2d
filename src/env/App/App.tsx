@@ -1,11 +1,11 @@
 import type {FC} from 'react';
 import {useState, useEffect} from 'react';
 import './index.css';
-import {Live2DRunner} from '@react-live2d/Live2DRunner';
-import {useTicker} from '@react-live2d/Ticker/useTicker';
-import {Live2DCanvas} from '@react-live2d/Live2DCanvas';
-import {Live2DModel} from '@react-live2d/Live2DModel';
-import {useLive2DModelContext} from '@react-live2d/Live2DModel/Live2DModel';
+import {Live2DRunner} from '@react-live2d';
+import {useTicker} from '@react-live2d';
+import {Live2DCanvas} from '@react-live2d';
+import {Live2DModel} from '@react-live2d';
+import {useLive2DModelContext} from '@react-live2d';
 
 type Expression = {
     name: string;
@@ -108,7 +108,7 @@ const Live2D = ({modelJson}: {modelJson: string}) => {
                 ))}
             </div>
             <Live2DRunner ticker={ticker}>
-                <Live2DCanvas width={700} height={1000}>
+                <Live2DCanvas>
                     <Live2DModel modelJsonPath={modelJson}>
                         <Live2DDataSetter setExpressions={setExpressions} setMotions={setMotions} />
                     </Live2DModel>

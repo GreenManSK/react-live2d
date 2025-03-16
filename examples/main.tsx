@@ -6,7 +6,7 @@ import './index.css';
 import {Page} from './Page';
 
 const ExamplesList = React.lazy(() => import('./ExamplesList'));
-const ModelViewer = React.lazy(() => import('./App-2'));
+const ModelViewer = React.lazy(() => import('./ModelViewer/ModelViewer'));
 
 // eslint-disable-next-line ssr-friendly/no-dom-globals-in-module-scope
 ReactDOM.createRoot(document.getElementById('root')!).render(

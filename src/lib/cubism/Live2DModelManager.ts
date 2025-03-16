@@ -83,6 +83,7 @@ export class Live2DModelManager {
         canvasX: number,
         canvasY: number
     ) {
+        console.log('Model', this.model.model.getCanvasWidth(), canvasWidth, canvasHeight);
         const deltaTimeSeconds = deltaTime / 1000.0;
 
         const projection = new CubismMatrix44();

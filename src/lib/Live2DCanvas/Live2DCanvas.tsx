@@ -1,50 +1,23 @@
-import type {Ref} from 'react';
-import {createContext, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren} from 'react';
+import {useEffect, useMemo, useRef, useState, type PropsWithChildren} from 'react';
 
-import styles from './Live2DCanvas.module.css';
 import {useLive2DRunnerContext} from '../Live2DRunner/Live2DRunner';
-import type {Live2DTextureManager} from '../cubism/Live2DTextureManager';
 import type {Live2DModelManager} from '../cubism/Live2DModelManager';
 import {Live2DCanvasManager} from '../cubism/Live2DCanvasManager';
+import {Live2DCanvasContext} from './useLive2DCanvasContext';
 
-export type Live2DCanvasProps = {
-    width: number;
-    height: number;
-};
-
-export type ILive2DCanvasContext = {
-    gl?: WebGL2RenderingContext;
-    canvas: Ref<HTMLCanvasElement | null>;
-    textureManager?: Live2DTextureManager;
-    addModel: (model: Live2DModelManager) => void;
-    removeModel: (model: Live2DModelManager) => void;
-};
-
-const defaultCanvasContext: ILive2DCanvasContext = {
-    gl: undefined,
-    canvas: {current: null},
-    textureManager: undefined,
-    addModel: () => {},
-    removeModel: () => {},
-};
-
-const Live2DCanvasContext = createContext<ILive2DCanvasContext>(defaultCanvasContext);
-
-export const useLive2DCanvasContext = () => useContext(Live2DCanvasContext);
-
-export const Live2DCanvas = ({children, width, height}: PropsWithChildren<Live2DCanvasProps>) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+export const Live2DCanvas = ({children}: PropsWithChildren<object>) => {
+    const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
     const canvasManager = useRef<Live2DCanvasManager>(undefined);
     const [gl, setGl] = useState<WebGL2RenderingContext | undefined>(undefined);
 
     const {registerCanvas, unregisterCanvas} = useLive2DRunnerContext();
     useEffect(() => {
-        const gl = canvasRef.current?.getContext('webgl2');
+        const gl = canvas?.getContext('webgl2');
         if (gl) {
             setGl(gl);
             canvasManager.current = new Live2DCanvasManager(gl);
-            if (canvasRef.current) {
-                canvasManager.current.setup(canvasRef.current);
+            if (canvas) {
+                canvasManager.current.setup(canvas);
             } else {
                 console.error('Live2DCanvas: Canvas is not available');
             }
@@ -58,7 +31,7 @@ export const Live2DCanvas = ({children, width, height}: PropsWithChildren<Live2D
             unregisterCanvas(canvasManager.current);
             canvasManager.current.dispose();
         };
-    }, [registerCanvas, unregisterCanvas]);
+    }, [registerCanvas, unregisterCanvas, canvas]);
 
     useEffect(() => {
         if (!gl) {
@@ -69,13 +42,9 @@ export const Live2DCanvas = ({children, width, height}: PropsWithChildren<Live2D
     }, [gl]);
 
     const canvasContext = useMemo(() => {
-        if (!gl || !canvasRef.current) {
-            return defaultCanvasContext;
-        }
-
         return {
-            gl: gl,
-            canvas: canvasRef,
+            gl,
+            setCanvas: (canvas: HTMLCanvasElement | null) => setCanvas(canvas),
             textureManager: canvasManager.current?.textureManager,
             addModel: (model: Live2DModelManager) => {
                 canvasManager.current?.addModel(model);
@@ -85,12 +54,5 @@ export const Live2DCanvas = ({children, width, height}: PropsWithChildren<Live2D
             },
         };
     }, [gl]);
-
-    return (
-        <Live2DCanvasContext.Provider value={canvasContext}>
-            <canvas width={width} height={height} ref={canvasRef} className={styles.canvas}>
-                {children}
-            </canvas>
-        </Live2DCanvasContext.Provider>
-    );
+    return <Live2DCanvasContext.Provider value={canvasContext}>{children}</Live2DCanvasContext.Provider>;
 };
