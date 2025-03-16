@@ -1,168 +1,33 @@
-import type {FC} from 'react';
-import {useState, useEffect} from 'react';
 import './index.css';
-import {Live2DRunner} from '@react-live2d/Live2DRunner';
-import {useTicker} from '@react-live2d/Ticker/useTicker';
-import {Live2DCanvas} from '@react-live2d/Live2DCanvas';
-import {Live2DModel} from '@react-live2d/Live2DModel';
-import {useLive2DModelContext} from '@react-live2d/Live2DModel/Live2DModel';
 
-type Expression = {
-    name: string;
-    callback: () => void;
-};
-
-type Motion = {
-    group: string;
-    id: number;
-    callback: () => void;
-};
-
-type Live2DDataSetterProps = {
-    setExpressions: (expressions: Expression[]) => void;
-    setMotions: (motions: Motion[]) => void;
-};
-
-const Live2DDataSetter: FC<Live2DDataSetterProps> = ({setExpressions, setMotions}) => {
-    const {motionManager} = useLive2DModelContext();
-    useEffect(() => {
-        if (!motionManager) {
-            return;
-        }
-        const expressions = motionManager.getExpressionsList().map((expression) => ({
-            name: expression,
-            callback: () => {
-                motionManager.setExpression(expression);
-            },
-        }));
-        setExpressions(expressions);
-
-        const motionGroups = [...motionManager.getMotionGroups().entries()];
-        const motions: Motion[] = [];
-        for (const [groupName, ids] of motionGroups) {
-            for (let i = 0; i < ids; i++) {
-                motions.push({
-                    group: groupName,
-                    id: i,
-                    callback: () => {
-                        motionManager.setMotion(groupName, i);
-                    },
-                });
-            }
-        }
-        setMotions(motions);
-    }, [motionManager, setExpressions, setMotions]);
-
-    // Add mouse listener on window to get x and y mouse coordinates
-    useEffect(() => {
-        const handleMouseMove = (event: MouseEvent) => {
-            if (!motionManager) {
-                return;
-            }
-            const x = event.clientX + window.scrollX;
-            const y = event.clientY + window.scrollY;
-            motionManager.setLookTarget(x, y, 5);
-        };
-
-        window.addEventListener('click', handleMouseMove);
-
-        return () => {
-            window.removeEventListener('click', handleMouseMove);
-        };
-    }, [motionManager]);
-
-    useEffect(() => {
-        // Create timer here for every 100ms
-        const timer = setInterval(() => {
-            if (!motionManager) {
-                return;
-            }
-            motionManager.setLipValue(Math.random(), 10);
-        }, 1000);
-        return () => {
-            clearInterval(timer);
-        };
-    }, [motionManager]);
-
-    return <></>;
-};
-
-const Live2D = ({modelJson}: {modelJson: string}) => {
-    const ticker = useTicker();
-    const [expressions, setExpressions] = useState<Expression[]>([]);
-    const [motions, setMotions] = useState<Motion[]>([]);
+const App = () => {
     return (
-        <>
-            <div>
-                {expressions.map((expressions) => (
-                    <button key={expressions.name} onClick={expressions.callback}>
-                        {expressions.name}
-                    </button>
-                ))}
-            </div>
-            <div>
-                {motions.map((motion) => (
-                    <button key={`${motion.group}_${motion.id}`} onClick={motion.callback}>
-                        {motion.group} {motion.id}
-                    </button>
-                ))}
-            </div>
-            <Live2DRunner ticker={ticker}>
-                <Live2DCanvas width={700} height={1000}>
-                    <Live2DModel modelJsonPath={modelJson}>
-                        <Live2DDataSetter setExpressions={setExpressions} setMotions={setMotions} />
-                    </Live2DModel>
-                </Live2DCanvas>
-            </Live2DRunner>
-        </>
-    );
-};
-
-const App: FC = () => {
-    const [isScriptLoaded, setIsScriptLoaded] = useState(false);
-
-    useEffect(() => {
-        const script = document.createElement('script');
-        script.src = 'https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js';
-        script.async = true;
-        script.onload = () => {
-            setIsScriptLoaded(true);
-        };
-        document.body.appendChild(script);
-
-        return () => {
-            document.body.removeChild(script);
-        };
-    }, []);
-
-    const models = ['Haru', 'Hiyori', 'Mao', 'Mark', 'Natori', 'Rice', 'Wanko', 'fern', 'mikumiku', 'L2DZeroVS'];
-    const [modelJson, setModelJson] = useState('models/Haru/Haru.model3.json');
-
-    return (
-        <div>
-            <div>
-                <button onClick={() => setIsScriptLoaded(!isScriptLoaded)}>Toggle is loaded</button>
-            </div>
-            <div>
-                {models.map((model) => (
-                    <button key={model} onClick={() => setModelJson(`models/${model}/${model}.model3.json`)}>
-                        {model}
-                    </button>
-                ))}
-                <button onClick={() => setModelJson('models/shizuku/shizuku.model.json')}>Shizuku Old</button>
-            </div>
-            {isScriptLoaded && <Live2D modelJson={modelJson} />}
+        <div className="flex min-h-screen flex-col items-center justify-center bg-slate-300">
+            <h1 className="mb-6 text-4xl font-bold text-blue-800">Live2D Example</h1>
+            <ul className="space-y-4">
+                <li>
+                    <a href="#e1" className="text-lg hover:underline">
+                        Example 1
+                    </a>
+                </li>
+                <li>
+                    <a href="#e1" className="text-lg hover:underline">
+                        Example 2
+                    </a>
+                </li>
+                <li>
+                    <a href="#e1" className="text-lg hover:underline">
+                        Example 3
+                    </a>
+                </li>
+                <li>
+                    <a href="#e1" className="text-lg hover:underline">
+                        Example 4
+                    </a>
+                </li>
+            </ul>
         </div>
     );
 };
 
-const App2 = () => {
-    return (
-        <>
-            <h1>Live2D Example</h1>
-            <App />
-        </>
-    );
-};
-
-export default App2;
+export default App;
