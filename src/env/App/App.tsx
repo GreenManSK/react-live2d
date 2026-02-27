@@ -1,7 +1,7 @@
 import type {FC} from 'react';
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useRef} from 'react';
 import './index.css';
-import {Live2DRunner} from '@react-live2d';
+import {Live2DCanvasContext, Live2DRunner} from '@react-live2d';
 import {useTicker} from '@react-live2d';
 import {Live2DCanvas} from '@react-live2d';
 import {Live2DModel} from '@react-live2d';
@@ -91,6 +91,8 @@ const Live2D = ({modelJson}: {modelJson: string}) => {
     const ticker = useTicker();
     const [expressions, setExpressions] = useState<Expression[]>([]);
     const [motions, setMotions] = useState<Motion[]>([]);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
     return (
         <>
             <div>
@@ -111,6 +113,18 @@ const Live2D = ({modelJson}: {modelJson: string}) => {
                 <Live2DCanvas>
                     <Live2DModel modelJsonPath={modelJson}>
                         <Live2DDataSetter setExpressions={setExpressions} setMotions={setMotions} />
+                        <Live2DCanvasContext.Consumer>
+                            {({setCanvas}) => (
+                                <canvas
+                                    ref={(el) => {
+                                        setCanvas(el);
+                                        canvasRef.current = el;
+                                    }}
+                                    width={500}
+                                    height={500}
+                                />
+                            )}
+                        </Live2DCanvasContext.Consumer>
                     </Live2DModel>
                 </Live2DCanvas>
             </Live2DRunner>

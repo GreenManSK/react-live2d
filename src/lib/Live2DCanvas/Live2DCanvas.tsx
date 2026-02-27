@@ -44,6 +44,7 @@ export const Live2DCanvas = ({children}: PropsWithChildren<object>) => {
     const canvasContext = useMemo(() => {
         return {
             gl,
+            canvas,
             setCanvas: (canvas: HTMLCanvasElement | null) => setCanvas(canvas),
             textureManager: canvasManager.current?.textureManager,
             addModel: (model: Live2DModelManager) => {
@@ -53,6 +54,6 @@ export const Live2DCanvas = ({children}: PropsWithChildren<object>) => {
                 canvasManager.current?.removeModel(model);
             },
         };
-    }, [gl]);
+    }, [gl, canvas]);
     return <Live2DCanvasContext.Provider value={canvasContext}>{children}</Live2DCanvasContext.Provider>;
 };

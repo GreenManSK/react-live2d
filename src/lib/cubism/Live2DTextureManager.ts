@@ -14,7 +14,7 @@ export class Live2DTextureManager {
     }
 
     public loadTextureFromFile(fileName: string, usePremultiply: boolean, forceReload = false): Promise<TextureData> {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             const textureKey = this.getTextureKey(fileName, usePremultiply);
             if (this.textureMap.has(textureKey)) {
                 if (!forceReload) {
@@ -26,6 +26,7 @@ export class Live2DTextureManager {
             }
 
             const img = new Image();
+            img.crossOrigin = 'anonymous';
             img.addEventListener(
                 'load',
                 () => {
@@ -55,6 +56,9 @@ export class Live2DTextureManager {
                 },
                 {passive: true}
             );
+            img.addEventListener('error', () => {
+                reject(new Error(`Failed to load texture: ${fileName}`));
+            });
             img.src = fileName;
         });
     }

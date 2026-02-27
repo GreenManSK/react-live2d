@@ -1,7 +1,13 @@
 import {useLive2DModelContext} from '@react-live2d';
 import {useEffect, useState} from 'react';
 
-export const ModelControls = () => {
+type Props = {
+    hitZonesEnabled: boolean;
+    onToggleHitZones: (enabled: boolean) => void;
+    lastHitAreas: string[];
+};
+
+export const ModelControls = ({hitZonesEnabled, onToggleHitZones, lastHitAreas}: Props) => {
     const {motionManager} = useLive2DModelContext();
 
     const [lookAtMouse, setLookAtMouse] = useState(true);
@@ -11,6 +17,11 @@ export const ModelControls = () => {
     const [bodyFaceMouse, setBodyFaceMouse] = useState(true);
     const [bodyX, setBodyX] = useState(0);
     const [bodyY, setBodyY] = useState(0);
+
+    const [scale, setScale] = useState(1.0);
+    const [positionX, setPositionX] = useState(0.0);
+    const [positionY, setPositionY] = useState(0.0);
+    const [showHitAreas, setShowHitAreas] = useState(false);
 
     useEffect(() => {
         if (!motionManager || lookAtMouse) {
@@ -25,6 +36,27 @@ export const ModelControls = () => {
         }
         motionManager.setBodyOrientationTargetRelative(bodyX, bodyY, 0);
     }, [motionManager, bodyX, bodyY, bodyFaceMouse]);
+
+    useEffect(() => {
+        if (!motionManager) {
+            return;
+        }
+        motionManager.setScale(scale);
+    }, [motionManager, scale]);
+
+    useEffect(() => {
+        if (!motionManager) {
+            return;
+        }
+        motionManager.setPosition(positionX, positionY);
+    }, [motionManager, positionX, positionY]);
+
+    useEffect(() => {
+        if (!motionManager) {
+            return;
+        }
+        motionManager.setShowHitAreas(showHitAreas);
+    }, [motionManager, showHitAreas]);
 
     useEffect(() => {
         if (!motionManager) {
@@ -57,9 +89,6 @@ export const ModelControls = () => {
 
     const expressions = motionManager.getExpressionsList();
     const motionGroups = [...motionManager.getMotionGroups().entries()];
-
-    // TODO: Add scale sliders
-    // TODO: Add position sliders
 
     return (
         <>
@@ -182,6 +211,78 @@ export const ModelControls = () => {
                     />
                     {bodyY}
                 </label>
+            </div>
+            <h3 className="block text-lg font-bold">Scale & Position</h3>
+            <div className="flex flex-wrap gap-2">
+                <label className="flex items-center gap-2">
+                    Scale:
+                    <input
+                        type="range"
+                        min={0.1}
+                        max={3}
+                        step={0.01}
+                        value={scale}
+                        onChange={(e) => setScale(parseFloat(e.target.value))}
+                    />
+                    {scale.toFixed(2)}
+                </label>
+                <label className="flex items-center gap-2">
+                    X:
+                    <input
+                        type="range"
+                        min={-2}
+                        max={2}
+                        step={0.01}
+                        value={positionX}
+                        onChange={(e) => setPositionX(parseFloat(e.target.value))}
+                    />
+                    {positionX.toFixed(2)}
+                </label>
+                <label className="flex items-center gap-2">
+                    Y:
+                    <input
+                        type="range"
+                        min={-2}
+                        max={2}
+                        step={0.01}
+                        value={positionY}
+                        onChange={(e) => setPositionY(parseFloat(e.target.value))}
+                    />
+                    {positionY.toFixed(2)}
+                </label>
+            </div>
+            <h3 className="block text-lg font-bold">Hit Zones</h3>
+            <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-2">
+                    <input
+                        type="checkbox"
+                        checked={hitZonesEnabled}
+                        onChange={(e) => onToggleHitZones(e.target.checked)}
+                    />
+                    Enable hit zone detection
+                </label>
+                <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={showHitAreas} onChange={(e) => setShowHitAreas(e.target.checked)} />
+                    Show hit area outlines
+                </label>
+                <div className="text-sm">
+                    <span className="font-semibold">Available areas: </span>
+                    {motionManager.getHitAreaNames().length === 0 ? (
+                        <span className="text-gray-400 italic">none defined in model</span>
+                    ) : (
+                        motionManager.getHitAreaNames().join(', ')
+                    )}
+                </div>
+                {hitZonesEnabled && (
+                    <div className="text-sm">
+                        <span className="font-semibold">Last click: </span>
+                        {lastHitAreas.length === 0 ? (
+                            <span className="text-gray-400 italic">click the model</span>
+                        ) : (
+                            <span className="text-green-300">{lastHitAreas.join(', ')}</span>
+                        )}
+                    </div>
+                )}
             </div>
         </>
     );

@@ -10,6 +10,11 @@ const ExamplesList = () => {
                         Model Viewer
                     </NavLink>
                 </li>
+                <li>
+                    <NavLink to="/lip-sync" className="text-lg hover:underline">
+                        Lip Sync Demo
+                    </NavLink>
+                </li>
             </ul>
         </div>
     );
