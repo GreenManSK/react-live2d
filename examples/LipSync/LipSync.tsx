@@ -6,9 +6,12 @@ import {
     useLive2DModelContext,
     useTicker,
 } from '@react-live2d';
-import {useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
-const models = ['Haru', 'Hiyori', 'Mao', 'Mark', 'Natori', 'Rice', 'Wanko', 'fern', 'mikumiku', 'L2DZeroVS'];
+const PRESET_MODELS = ['Haru', 'Hiyori', 'Mao', 'Mark', 'Natori', 'Rice', 'Wanko', 'fern', 'mikumiku', 'L2DZeroVS'];
+
+type LoadMode = 'json' | 'zip';
+type LoadStatus = 'idle' | 'loading' | 'error';
 
 const LipSyncControls = () => {
     const {motionManager} = useLive2DModelContext();
@@ -160,7 +163,21 @@ const LipSync = () => {
     const ticker = useTicker();
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    const [loadMode, setLoadMode] = useState<LoadMode>('json');
     const [modelJson, setModelJson] = useState('./models/Haru/Haru.model3.json');
+    const [modelZip, setModelZip] = useState<string | null>(null);
+    const [urlInput, setUrlInput] = useState('');
+    const [zipUrlInput, setZipUrlInput] = useState('');
+    const [loadStatus, setLoadStatus] = useState<LoadStatus>('idle');
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const fileBlobUrlRef = useRef<string | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (fileBlobUrlRef.current) URL.revokeObjectURL(fileBlobUrlRef.current);
+        };
+    }, []);
 
     useEffect(() => {
         const updateSize = () => {
@@ -174,6 +191,47 @@ const LipSync = () => {
         return () => observer.disconnect();
     }, []);
 
+    const selectJsonModel = (path: string) => {
+        setLoadMode('json');
+        setModelJson(path);
+        setModelZip(null);
+        setLoadStatus('loading');
+        setLoadError(null);
+    };
+
+    const selectZipModel = (zipPath: string) => {
+        setLoadMode('zip');
+        setModelZip(zipPath);
+        setLoadStatus('loading');
+        setLoadError(null);
+    };
+
+    const handleUrlLoad = () => {
+        const trimmed = urlInput.trim();
+        if (trimmed) selectJsonModel(trimmed);
+    };
+
+    const handleZipUrlLoad = () => {
+        const trimmed = zipUrlInput.trim();
+        if (trimmed) selectZipModel(trimmed);
+    };
+
+    const handleZipFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (fileBlobUrlRef.current) URL.revokeObjectURL(fileBlobUrlRef.current);
+        const blobUrl = URL.createObjectURL(file);
+        fileBlobUrlRef.current = blobUrl;
+        selectZipModel(blobUrl);
+        e.target.value = '';
+    };
+
+    const handleLoad = useCallback(() => setLoadStatus('idle'), []);
+    const handleError = useCallback((error: Error) => {
+        setLoadStatus('error');
+        setLoadError(error.message);
+    }, []);
+
     return (
         <Live2DRunner ticker={ticker}>
             <Live2DCanvas>
@@ -183,21 +241,81 @@ const LipSync = () => {
                         <h1 className="text-2xl font-bold">Lip Sync Demo</h1>
 
                         {/* Model picker */}
-                        <div>
-                            <h2 className="mb-1 text-lg font-bold">Model</h2>
+                        <div className="flex flex-col gap-3">
+                            <h2 className="text-lg font-bold">Model</h2>
+
+                            {/* Presets */}
                             <div className="flex flex-wrap gap-1">
-                                {models.map((model) => (
+                                {PRESET_MODELS.map((model) => (
                                     <button
                                         key={model}
                                         className="cursor-pointer rounded bg-blue-600 px-2 py-1 text-sm text-white transition hover:bg-blue-700"
-                                        onClick={() => setModelJson(`./models/${model}/${model}.model3.json`)}>
+                                        onClick={() => selectJsonModel(`./models/${model}/${model}.model3.json`)}>
                                         {model}
                                     </button>
                                 ))}
                             </div>
+
+                            {/* URL (.model3.json) */}
+                            <div className="flex flex-col gap-1">
+                                <span className="text-sm font-semibold">Load from URL (.model3.json)</span>
+                                <input
+                                    type="url"
+                                    value={urlInput}
+                                    onChange={(e) => setUrlInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleUrlLoad()}
+                                    placeholder="https://example.com/model/model.model3.json"
+                                    className="w-full rounded border border-blue-400 bg-blue-900 px-3 py-2 text-sm text-white placeholder-blue-300 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                                />
+                                <button
+                                    onClick={handleUrlLoad}
+                                    disabled={!urlInput.trim() || loadStatus === 'loading'}
+                                    className="cursor-pointer rounded bg-blue-500 px-4 py-2 text-sm text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50">
+                                    {loadStatus === 'loading' && loadMode === 'json' ? 'Loading…' : 'Load'}
+                                </button>
+                            </div>
+
+                            {/* ZIP */}
+                            <div className="flex flex-col gap-1">
+                                <span className="text-sm font-semibold">Load from ZIP</span>
+                                <input
+                                    type="url"
+                                    value={zipUrlInput}
+                                    onChange={(e) => setZipUrlInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleZipUrlLoad()}
+                                    placeholder="https://example.com/model.zip"
+                                    className="w-full rounded border border-blue-400 bg-blue-900 px-3 py-2 text-sm text-white placeholder-blue-300 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                                />
+                                <button
+                                    onClick={handleZipUrlLoad}
+                                    disabled={!zipUrlInput.trim() || loadStatus === 'loading'}
+                                    className="cursor-pointer rounded bg-blue-500 px-4 py-2 text-sm text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50">
+                                    {loadStatus === 'loading' && loadMode === 'zip' ? 'Loading…' : 'Load ZIP from URL'}
+                                </button>
+                                <label className="cursor-pointer rounded bg-green-600 px-4 py-2 text-center text-sm text-white transition hover:bg-green-700">
+                                    Upload ZIP file
+                                    <input
+                                        type="file"
+                                        accept=".zip"
+                                        onChange={handleZipFileUpload}
+                                        className="hidden"
+                                    />
+                                </label>
+                            </div>
+
+                            {loadStatus === 'error' && loadError && (
+                                <p className="text-sm text-red-300">
+                                    <span className="font-semibold">Error: </span>
+                                    {loadError}
+                                </p>
+                            )}
                         </div>
 
-                        <Live2DModel modelJsonPath={modelJson}>
+                        <Live2DModel
+                            modelJsonPath={loadMode === 'json' ? modelJson : undefined}
+                            modelZipPath={loadMode === 'zip' && modelZip ? modelZip : undefined}
+                            onLoad={handleLoad}
+                            onError={handleError}>
                             <LipSyncControls />
                         </Live2DModel>
                     </div>
