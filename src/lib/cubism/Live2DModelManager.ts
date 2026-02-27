@@ -643,25 +643,32 @@ export class Live2DModelManager {
                 this.motionSoundUrls.set(name, this.fileSystem.getFileUrl(soundFileName));
             }
             motionPromises.push(
-                this.fileSystem.fetchFile(motionFileName).then((arrayBuffer) => {
-                    const motion = this.model.loadMotion(
-                        arrayBuffer,
-                        arrayBuffer.byteLength,
-                        name,
-                        undefined,
-                        undefined,
-                        this.settings,
-                        group,
-                        i
-                    );
-                    if (motion === null) {
-                        console.warn(`Failed to load motion: ${motionFileName}`);
-                        return;
-                    }
-                    loadedCount++;
-                    motion.setEffectIds(this.eyeBlinkIds, this.lipSyncIds);
-                    this.motions.set(name, motion);
-                })
+                this.fileSystem
+                    .fetchFile(motionFileName)
+                    .then((arrayBuffer) => {
+                        const motion = this.model.loadMotion(
+                            arrayBuffer,
+                            arrayBuffer.byteLength,
+                            name,
+                            undefined,
+                            undefined,
+                            this.settings,
+                            group,
+                            i
+                        );
+                        if (motion === null) {
+                            console.warn(`Failed to load motion: ${motionFileName}`);
+                            return;
+                        }
+                        loadedCount++;
+                        motion.setEffectIds(this.eyeBlinkIds, this.lipSyncIds);
+                        this.motions.set(name, motion);
+                    })
+                    .catch((error: unknown) => {
+                        console.warn(
+                            `Skipping motion "${motionFileName}": ${error instanceof Error ? error.message : error}`
+                        );
+                    })
             );
         }
         return Promise.all(motionPromises).then(() => {
