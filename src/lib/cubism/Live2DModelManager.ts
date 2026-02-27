@@ -13,6 +13,7 @@ import type {CubismViewMatrix} from '@cubism/math/cubismviewmatrix';
 
 import {Live2DCubismUserModel} from '../cubism/Live2DCubismUserModel';
 import type {Live2DTextureManager} from './Live2DTextureManager';
+import {Live2DLipSyncManager} from './Live2DLipSyncManager';
 
 type Orientation = {
     x: number;
@@ -58,9 +59,9 @@ export class Live2DModelManager {
         isRelative: false,
     };
 
-    private currentLipValue = 0.0;
-    private lipValue = 0.0;
-    private lipSpeed = 0.0;
+    private lipSyncManager = new Live2DLipSyncManager();
+    /** Resolved audio URLs keyed by "<group>_<index>", populated during motion loading. */
+    private motionSoundUrls = new Map<string, string>();
 
     private userScale = 1.0;
     private userPositionX = 0.0;
@@ -201,13 +202,9 @@ export class Live2DModelManager {
         }
 
         if (this.model.lipsync) {
-            // TODO: LipSync manager .getLipValue(deltaTimeSeconds)
-            this.currentLipValue =
-                this.lipSpeed !== 0
-                    ? this.currentLipValue + (this.lipValue - this.currentLipValue) * this.lipSpeed * deltaTimeSeconds
-                    : this.lipValue;
+            const lipValue = this.lipSyncManager.update(deltaTimeSeconds);
             for (let i = 0; i < this.lipSyncIds.getSize(); ++i) {
-                this.model.model.addParameterValueById(this.lipSyncIds.at(i), this.currentLipValue, 0.8);
+                this.model.model.addParameterValueById(this.lipSyncIds.at(i), lipValue, 0.8);
             }
         }
 
@@ -290,8 +287,35 @@ export class Live2DModelManager {
     }
 
     public setLipValue(value: number, speed: number) {
-        this.lipValue = value;
-        this.lipSpeed = speed;
+        this.lipSyncManager.setManual(value, speed);
+    }
+
+    public startLipSyncFromUrl(url: string): Promise<void> {
+        return this.lipSyncManager.startFromUrl(url);
+    }
+
+    public startLipSyncFromBuffer(buffer: ArrayBuffer): Promise<void> {
+        return this.lipSyncManager.startFromBuffer(buffer);
+    }
+
+    public stopLipSync(): void {
+        this.lipSyncManager.stopAudio();
+    }
+
+    public isSpeaking(): boolean {
+        return this.lipSyncManager.isPlaying();
+    }
+
+    /**
+     * Returns the resolved audio URL for a given motion (group + index),
+     * or null if the motion has no sound file defined.
+     */
+    public getMotionSoundUrl(groupName: string, id: number): string | null {
+        return this.motionSoundUrls.get(`${groupName}_${id}`) ?? null;
+    }
+
+    public dispose(): void {
+        this.lipSyncManager.dispose();
     }
 
     public setScale(scale: number) {
@@ -627,6 +651,11 @@ export class Live2DModelManager {
         for (let i = 0; i < this.settings.getMotionCount(group); i++) {
             const motionFileName = this.settings.getMotionFileName(group, i);
             const name = `${group}_${i}`;
+            // Store resolved sound URL for this motion if one is defined.
+            const soundFileName = this.settings.getMotionSoundFileName(group, i);
+            if (soundFileName) {
+                this.motionSoundUrls.set(name, this.resolveFilePath(soundFileName));
+            }
             motionPromises.push(
                 Live2DModelManager.fetchArrayBuffer(this.resolveFilePath(motionFileName)).then((arrayBuffer) => {
                     const motion = this.model.loadMotion(

@@ -366,13 +366,51 @@ motionManager.setBodyOrientationTargetRelative(x: number, y: number, speedPerS?:
 
 ### Lip Sync
 
-Manually drive the model's mouth open/close value.
+Three sources are supported. Audio sources (file or buffer) take priority over manual control; when audio finishes, the manager automatically reverts to the manual value.
+
+#### Audio-driven lip sync
+
+The audio is played through the browser's speakers while its RMS amplitude drives the model's mouth parameter in real time. Supports both WAV and MP3 formats.
+
+```ts
+// Load from a URL (WAV or MP3) — fetches, decodes, and plays
+motionManager.startLipSyncFromFile(url: string): Promise<void>
+
+// Load from an ArrayBuffer (e.g. user-uploaded file via FileReader)
+motionManager.startLipSyncFromBuffer(buffer: ArrayBuffer): Promise<void>
+
+// Stop audio playback and revert to manual control
+motionManager.stopLipSync(): void
+
+// Returns true while audio is playing and driving the mouth
+motionManager.isSpeaking(): boolean
+```
+
+#### Motion sound files
+
+Play a motion and automatically start lip sync from its bundled sound file (if the model defines one in the `.model3.json` `Motions` section):
+
+```ts
+motionManager.setMotionWithSound(
+  groupName: string,
+  id: number,
+  priority?: number,                    // default: 2
+  onFinishedMotionHandler?: () => void,
+  onBeganMotionHandler?: () => void
+): void
+```
+
+If the motion has no sound file, this behaves identically to `setMotion`.
+
+#### Manual control
 
 ```ts
 // value: 0.0 (closed) to 1.0 (fully open)
-// speedPerS: interpolation speed, 0 = instant
+// speedPerS: interpolation speed in units/second, 0 = instant
 motionManager.setLipValue(value: number, speedPerS?: number): void
 ```
+
+The manual value is used when no audio is playing.
 
 ### Scale & Position
 
@@ -519,6 +557,7 @@ Manager layer (src/lib/cubism/)
   Live2DCanvasManager      — Projection matrices, shader, per-frame render dispatch
   Live2DModelManager       — Loads/renders a single model; owns all Cubism effects
   Live2DModelMotionManager — Public API: expressions, motions, look, body, lip sync
+  Live2DLipSyncManager     — Web Audio API analysis; drives mouth parameter from RMS amplitude
   Live2DTextureManager     — Texture fetch, cache, WebGL texture objects
   Live2DCubismUserModel    — Thin wrapper around CubismUserModel from the SDK
 ```
@@ -537,7 +576,7 @@ rAF tick
           → look target interpolation
           → breath.updateParameters()
           → physics.evaluate()
-          → lip sync parameter update
+          → lip sync update (Live2DLipSyncManager.update → RMS or manual value)
           → pose.updateParameters()
           → model.update()
           → renderer.drawModel()

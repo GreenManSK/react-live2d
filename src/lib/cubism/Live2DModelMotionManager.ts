@@ -39,6 +39,53 @@ export class Live2DModelMotionManager {
         return this.modelManager.getMotionGroups();
     }
 
+    /**
+     * Start lip sync driven by an audio file at the given URL (WAV or MP3).
+     * The audio plays through the browser's speakers while its amplitude drives
+     * the model's mouth in real time.
+     */
+    public startLipSyncFromFile(url: string): Promise<void> {
+        return this.modelManager.startLipSyncFromUrl(url);
+    }
+
+    /**
+     * Start lip sync from an ArrayBuffer (e.g. from a user-uploaded file).
+     * Handles WAV and MP3 formats.
+     */
+    public startLipSyncFromBuffer(buffer: ArrayBuffer): Promise<void> {
+        return this.modelManager.startLipSyncFromBuffer(buffer);
+    }
+
+    /** Stop audio-driven lip sync. Reverts to manual control. */
+    public stopLipSync(): void {
+        this.modelManager.stopLipSync();
+    }
+
+    /** Returns true while audio is playing and driving the mouth parameter. */
+    public isSpeaking(): boolean {
+        return this.modelManager.isSpeaking();
+    }
+
+    /**
+     * Play a motion and, if the motion has a sound file defined in the model,
+     * simultaneously start audio-driven lip sync from that sound file.
+     */
+    public setMotionWithSound(
+        groupName: string,
+        id: number,
+        priority = 2,
+        onFinishedMotionHandler?: () => void,
+        onBeganMotionHandler?: () => void
+    ): void {
+        const soundUrl = this.modelManager.getMotionSoundUrl(groupName, id);
+        if (soundUrl) {
+            this.modelManager.startLipSyncFromUrl(soundUrl).catch((err) => {
+                console.warn(`Live2D: failed to load motion sound "${soundUrl}":`, err);
+            });
+        }
+        this.setMotion(groupName, id, priority, onFinishedMotionHandler, onBeganMotionHandler);
+    }
+
     // speed = 0 means instant
     public setLookTarget(x: number, y: number, speedPerS = 0): void {
         this.modelManager.setLookTarget(x, y, speedPerS);

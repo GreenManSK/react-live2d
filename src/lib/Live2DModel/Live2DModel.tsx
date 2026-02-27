@@ -52,6 +52,7 @@ export const Live2DModel = ({
         addModel(modelManager);
         return () => {
             removeModel(modelManager);
+            modelManager.dispose();
         };
     }, [modelManager, addModel, removeModel]);
     useEffect(() => {

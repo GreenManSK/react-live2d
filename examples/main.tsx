@@ -7,6 +7,7 @@ import {Page} from './Page';
 
 const ExamplesList = React.lazy(() => import('./ExamplesList'));
 const ModelViewer = React.lazy(() => import('./ModelViewer/ModelViewer'));
+const LipSync = React.lazy(() => import('./LipSync/LipSync'));
 
 // eslint-disable-next-line ssr-friendly/no-dom-globals-in-module-scope
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -26,6 +27,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                     element={
                         <Page title="Live2D Model Viewer">
                             <ModelViewer />
+                        </Page>
+                    }
+                />
+                <Route
+                    path="/lip-sync"
+                    element={
+                        <Page title="Live2D Lip Sync Demo">
+                            <LipSync />
                         </Page>
                     }
                 />
