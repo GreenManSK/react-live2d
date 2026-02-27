@@ -59,4 +59,12 @@ export class Live2DModelMotionManager {
     public setLipValue(value: number, speedPerS = 0): void {
         this.modelManager.setLipValue(value, speedPerS);
     }
+
+    public setScale(scale: number): void {
+        this.modelManager.setScale(scale);
+    }
+
+    public setPosition(x: number, y: number): void {
+        this.modelManager.setPosition(x, y);
+    }
 }

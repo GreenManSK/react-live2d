@@ -62,6 +62,10 @@ export class Live2DModelManager {
     private lipValue = 0.0;
     private lipSpeed = 0.0;
 
+    private userScale = 1.0;
+    private userPositionX = 0.0;
+    private userPositionY = 0.0;
+
     public constructor(
         public readonly modelJsonPath: string,
         public readonly settings: ICubismModelSetting,
@@ -141,6 +145,8 @@ export class Live2DModelManager {
             deviceToCanvas,
             canvasX,
             canvasY,
+            canvasWidth,
+            canvasHeight,
             this.currentBodyOrientationTarget,
             this.bodyOrientationTarget,
             this.bodyOrientationSpeed
@@ -157,6 +163,8 @@ export class Live2DModelManager {
             deviceToCanvas,
             canvasX,
             canvasY,
+            canvasWidth,
+            canvasHeight,
             this.currentLookTarget,
             this.lookTarget,
             this.lookSpeed
@@ -191,6 +199,12 @@ export class Live2DModelManager {
         this.model.model.update();
 
         projection.multiplyByMatrix(this.model.modelMatrix);
+        if (this.userScale !== 1.0) {
+            projection.scaleRelative(this.userScale, this.userScale);
+        }
+        if (this.userPositionX !== 0.0 || this.userPositionY !== 0.0) {
+            projection.translateRelative(this.userPositionX, this.userPositionY);
+        }
         this.model.getRenderer().setMvpMatrix(projection);
         this.model.getRenderer().setRenderState(frameBuffer, viewport);
         this.model.getRenderer().drawModel();
@@ -257,12 +271,23 @@ export class Live2DModelManager {
         this.lipSpeed = speed;
     }
 
+    public setScale(scale: number) {
+        this.userScale = scale;
+    }
+
+    public setPosition(x: number, y: number) {
+        this.userPositionX = x;
+        this.userPositionY = y;
+    }
+
     private getTransformedOrientation(
         deltaTimeSeconds: number,
         viewMatrix: CubismViewMatrix,
         deviceToCanvas: CubismMatrix44,
         canvasX: number,
         canvasY: number,
+        canvasWidth: number,
+        canvasHeight: number,
         currentOrientation: Orientation,
         targetOrientation: Orientation,
         speed: number
@@ -277,6 +302,11 @@ export class Live2DModelManager {
         } else {
             goalX = targetOrientation.x - canvasX;
             goalY = targetOrientation.y - canvasY;
+            // Adjust goal so the model's visual center (accounting for user position) is the reference point.
+            // userPositionX/Y are in NDC units where ±1 = half canvas width/height.
+            // NDC +X = right (same as canvas), NDC +Y = up (opposite of canvas Y which increases downward).
+            goalX -= this.userPositionX * canvasWidth * 0.5;
+            goalY += this.userPositionY * canvasHeight * 0.5;
         }
 
         if (speed !== 0) {
@@ -289,7 +319,6 @@ export class Live2DModelManager {
 
         const transformedX = viewMatrix.invertTransformX(deviceToCanvas.transformX(currentOrientation.x));
         const transformedY = viewMatrix.invertTransformY(deviceToCanvas.transformY(currentOrientation.y));
-        console.log('transformedX', transformedX, transformedY);
         return {transformedX, transformedY};
     }
 

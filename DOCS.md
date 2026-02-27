@@ -168,6 +168,9 @@ import { Live2DModel } from 'react-live2d';
 | Prop | Type | Required | Description |
 |---|---|---|---|
 | `modelJsonPath` | `string` | Yes | URL or path to the `.model3.json` settings file for the model. |
+| `scale` | `number` | No | Uniform scale multiplier. `1.0` = default size, `2.0` = double size. Default: `1.0`. |
+| `positionX` | `number` | No | Horizontal offset in NDC units (±1 = half canvas width). `0` = centered. Default: `0`. |
+| `positionY` | `number` | No | Vertical offset in NDC units (±1 = half canvas height, +Y = up). `0` = centered. Default: `0`. |
 
 **Behavior**
 
@@ -347,6 +350,22 @@ Manually drive the model's mouth open/close value.
 // speedPerS: interpolation speed, 0 = instant
 motionManager.setLipValue(value: number, speedPerS?: number): void
 ```
+
+### Scale & Position
+
+Control the model's size and position on the canvas at runtime.
+
+```ts
+// Uniform scale multiplier. 1.0 = default, 2.0 = double size, 0.5 = half size.
+motionManager.setScale(scale: number): void
+
+// Offset the model's position in NDC units.
+// x: ±1 = half canvas width (positive = right)
+// y: ±1 = half canvas height (positive = up)
+motionManager.setPosition(x: number, y: number): void
+```
+
+Eye/body tracking (both absolute pixel and relative coordinates) automatically accounts for the model's visual center offset and scale so gaze follows the mouse correctly.
 
 ---
 

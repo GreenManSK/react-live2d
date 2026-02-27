@@ -8,9 +8,12 @@ import {Live2DModelContext} from './useLive2DModelContext';
 
 export type Props = {
     modelJsonPath: string;
+    scale?: number;
+    positionX?: number;
+    positionY?: number;
 };
 
-export const Live2DModel = ({modelJsonPath, children}: PropsWithChildren<Props>) => {
+export const Live2DModel = ({modelJsonPath, scale, positionX, positionY, children}: PropsWithChildren<Props>) => {
     const [modelManager, setModelManager] = useState<Live2DModelManager | null>(null);
     const {gl, textureManager, addModel, removeModel} = useLive2DCanvasContext();
     useEffect(() => {
@@ -30,6 +33,18 @@ export const Live2DModel = ({modelJsonPath, children}: PropsWithChildren<Props>)
             removeModel(modelManager);
         };
     }, [modelManager, addModel, removeModel]);
+    useEffect(() => {
+        if (!modelManager || scale === undefined) {
+            return;
+        }
+        modelManager.setScale(scale);
+    }, [modelManager, scale]);
+    useEffect(() => {
+        if (!modelManager || (positionX === undefined && positionY === undefined)) {
+            return;
+        }
+        modelManager.setPosition(positionX ?? 0.0, positionY ?? 0.0);
+    }, [modelManager, positionX, positionY]);
 
     const contextValue = useMemo(
         () => ({
