@@ -95,6 +95,11 @@ export const ModelControls = ({hitZonesEnabled, onToggleHitZones, lastHitAreas}:
             <h2 className="block text-xl font-bold">Model Controls</h2>
             <h3 className="block text-lg font-bold">Expressions ({expressions.length})</h3>
             <div className="flex flex-wrap gap-2">
+                <button
+                    className="cursor-pointer rounded bg-gray-600 px-4 py-2 text-white transition hover:bg-gray-500"
+                    onClick={() => motionManager.resetExpression()}>
+                    Reset
+                </button>
                 {expressions.map((expression) => (
                     <button
                         key={expression}

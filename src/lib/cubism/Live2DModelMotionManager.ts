@@ -14,6 +14,10 @@ export class Live2DModelMotionManager {
         }
     }
 
+    public resetExpression(): void {
+        this.modelManager.getModel().expressionManager.stopAllMotions();
+    }
+
     public getExpressionsList() {
         return this.modelManager.getExpressionsList();
     }

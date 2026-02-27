@@ -357,6 +357,9 @@ motionManager.getExpressionsList(): string[]
 
 // Activate a named expression
 motionManager.setExpression(name: string): void
+
+// Reset to the model's default expression (stops all expression motions)
+motionManager.resetExpression(): void
 ```
 
 Expression names come from the `.model3.json` file's `Expressions` array.

@@ -65,6 +65,7 @@ const LipSyncControls = () => {
 
     if (!motionManager) return null;
 
+    const expressions = motionManager.getExpressionsList();
     const motionGroups = [...motionManager.getMotionGroups().entries()];
 
     return (
@@ -105,6 +106,28 @@ const LipSyncControls = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Expressions */}
+            {expressions.length > 0 && (
+                <div>
+                    <h3 className="mb-1 text-lg font-bold">Expressions</h3>
+                    <div className="flex flex-wrap gap-1">
+                        <button
+                            className="cursor-pointer rounded bg-gray-600 px-3 py-1 text-sm text-white transition hover:bg-gray-500"
+                            onClick={() => motionManager.resetExpression()}>
+                            Reset
+                        </button>
+                        {expressions.map((expr) => (
+                            <button
+                                key={expr}
+                                className="cursor-pointer rounded bg-purple-600 px-3 py-1 text-sm text-white transition hover:bg-purple-700"
+                                onClick={() => motionManager.setExpression(expr)}>
+                                {expr}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Motion sounds */}
             <div>
