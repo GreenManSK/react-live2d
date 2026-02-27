@@ -1,5 +1,5 @@
 import type {PropsWithChildren} from 'react';
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 
 import {Live2DModelManager} from '../cubism/Live2DModelManager';
 import {Live2DModelMotionManager} from '../cubism/Live2DModelMotionManager';
@@ -24,6 +24,10 @@ export type Props = {
     onHitZone?: (event: HitZoneEvent) => void;
     /** Draw bounding-box outlines for all defined hit areas on the canvas. Default: false. */
     showHitAreas?: boolean;
+    /** Called once the model has finished loading and is ready to render. */
+    onLoad?: () => void;
+    /** Called if loading the model fails. Receives the error that caused the failure. */
+    onError?: (error: Error) => void;
 };
 
 export const Live2DModel = ({
@@ -33,17 +37,31 @@ export const Live2DModel = ({
     positionY,
     onHitZone,
     showHitAreas,
+    onLoad,
+    onError,
     children,
 }: PropsWithChildren<Props>) => {
     const [modelManager, setModelManager] = useState<Live2DModelManager | null>(null);
     const {gl, textureManager, addModel, removeModel, canvas} = useLive2DCanvasContext();
+    const onLoadRef = useRef(onLoad);
+    onLoadRef.current = onLoad;
+    const onErrorRef = useRef(onError);
+    onErrorRef.current = onError;
     useEffect(() => {
         if (!gl || !textureManager) {
             return;
         }
         Live2DModelManager.getModelManager(modelJsonPath, gl, textureManager)
             .then((modelManager) => modelManager.loadModel())
-            .then((finishedModelManager) => setModelManager(finishedModelManager));
+            .then((finishedModelManager) => {
+                setModelManager(finishedModelManager);
+                onLoadRef.current?.();
+            })
+            .catch((error: unknown) => {
+                const err = error instanceof Error ? error : new Error(String(error));
+                console.error('Failed to load Live2D model:', err);
+                onErrorRef.current?.(err);
+            });
     }, [modelJsonPath, gl, textureManager]);
     useEffect(() => {
         if (!modelManager) {

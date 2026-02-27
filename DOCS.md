@@ -167,12 +167,14 @@ import { Live2DModel } from 'react-live2d';
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
-| `modelJsonPath` | `string` | Yes | URL or path to the `.model3.json` settings file for the model. |
+| `modelJsonPath` | `string` | Yes | URL or path to the `.model3.json` settings file for the model. Supports both relative paths and absolute URLs (e.g. `https://…`). |
 | `scale` | `number` | No | Uniform scale multiplier. `1.0` = default size, `2.0` = double size. Default: `1.0`. |
 | `positionX` | `number` | No | Horizontal offset in NDC units (±1 = half canvas width). `0` = centered. Default: `0`. |
 | `positionY` | `number` | No | Vertical offset in NDC units (±1 = half canvas height, +Y = up). `0` = centered. Default: `0`. |
 | `onHitZone` | `(event: HitZoneEvent) => void` | No | Called when the user clicks a hit area on the model. When omitted, hit zone detection is disabled. |
 | `showHitAreas` | `boolean` | No | Draw cyan bounding-box outlines for all defined hit areas on the canvas. Useful for debugging. Default: `false`. |
+| `onLoad` | `() => void` | No | Called once the model has fully loaded and is ready to render. |
+| `onError` | `(error: Error) => void` | No | Called if loading the model fails (network error, CORS, invalid file, etc.). |
 
 **`HitZoneEvent`**
 
@@ -197,11 +199,14 @@ Use `motionManager.getHitAreaNames()` to query which hit areas a model defines a
 
 **Behavior**
 
-- Fetches and parses the `.model3.json` file.
+- Fetches and parses the `.model3.json` file. The path is resolved as a URL, so both relative paths (`./models/Haru/Haru.model3.json`) and absolute URLs (`https://example.com/model/model.model3.json`) are supported. All linked assets (model geometry, textures, motions, etc.) are resolved relative to the `.model3.json` URL.
 - Sequentially loads: model geometry, expressions, physics, pose, user data, eye blink setup, breath setup, lip sync setup, layout, motions, and textures.
+- Calls `onLoad` once the model finishes loading, or `onError` if any step in the critical loading path fails.
 - Once fully loaded, registers the model with `Live2DCanvas` for rendering.
 - Provides a `motionManager` via `Live2DModelContext` to child components.
 - Removes the model from the canvas on unmount.
+
+> **Cross-Origin (CORS)**: When loading from an external URL, the server must include appropriate CORS headers (`Access-Control-Allow-Origin`). Without them, the fetch and/or texture loads will fail and `onError` will be called.
 
 **Multiple models**
 

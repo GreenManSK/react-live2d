@@ -538,19 +538,15 @@ export class Live2DModelManager {
     }
 
     private loadModelFile(): Promise<void> {
-        return new Promise((resolve) => {
-            if (this.settings?.getModelFileName()) {
-                Live2DModelManager.fetchArrayBuffer(this.resolveFilePath(this.settings.getModelFileName())).then(
-                    (arrayBuffer) => {
-                        this.model.loadModel(arrayBuffer);
-                        resolve();
-                    }
-                );
-            } else {
-                console.warn('Model file not found');
-                resolve();
+        if (!this.settings?.getModelFileName()) {
+            console.warn('Model file not found');
+            return Promise.resolve();
+        }
+        return Live2DModelManager.fetchArrayBuffer(this.resolveFilePath(this.settings.getModelFileName())).then(
+            (arrayBuffer) => {
+                this.model.loadModel(arrayBuffer);
             }
-        });
+        );
     }
 
     private loadExpressions(): Promise<void> {
