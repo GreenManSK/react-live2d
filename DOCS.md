@@ -171,6 +171,29 @@ import { Live2DModel } from 'react-live2d';
 | `scale` | `number` | No | Uniform scale multiplier. `1.0` = default size, `2.0` = double size. Default: `1.0`. |
 | `positionX` | `number` | No | Horizontal offset in NDC units (±1 = half canvas width). `0` = centered. Default: `0`. |
 | `positionY` | `number` | No | Vertical offset in NDC units (±1 = half canvas height, +Y = up). `0` = centered. Default: `0`. |
+| `onHitZone` | `(event: HitZoneEvent) => void` | No | Called when the user clicks a hit area on the model. When omitted, hit zone detection is disabled. |
+| `showHitAreas` | `boolean` | No | Draw cyan bounding-box outlines for all defined hit areas on the canvas. Useful for debugging. Default: `false`. |
+
+**`HitZoneEvent`**
+
+```ts
+type HitZoneEvent = {
+  hitAreas: string[];           // names of all hit areas that contain the click point
+  originalEvent: MouseEvent;    // the underlying DOM click event
+  preventDefault: () => void;   // stops the click event from propagating
+};
+```
+
+Hit areas are defined in the model's `.model3.json` file under the `HitAreas` key:
+
+```json
+"HitAreas": [
+  { "Id": "HitAreaHead", "Name": "Head" },
+  { "Id": "HitAreaBody", "Name": "Body" }
+]
+```
+
+Use `motionManager.getHitAreaNames()` to query which hit areas a model defines at runtime.
 
 **Behavior**
 
@@ -366,6 +389,38 @@ motionManager.setPosition(x: number, y: number): void
 ```
 
 Eye/body tracking (both absolute pixel and relative coordinates) automatically accounts for the model's visual center offset and scale so gaze follows the mouse correctly.
+
+### Hit Zones
+
+Query which hit areas a model defines and manually perform hit tests.
+
+```ts
+// List all hit area names defined in the model's .model3.json
+motionManager.getHitAreaNames(): string[]
+
+// Hit-test the model at page coordinates (event.clientX + scrollX, event.clientY + scrollY).
+// Returns names of all hit areas that contain the point. Empty array if none.
+motionManager.hitTest(pageX: number, pageY: number): string[]
+
+// Draw cyan bounding-box outlines for all defined hit areas on the canvas.
+motionManager.setShowHitAreas(show: boolean): void
+```
+
+Automatic hit zone detection is enabled by passing an `onHitZone` prop to `<Live2DModel>`. See [Live2DModel](#live2dmodel) for the full API.
+
+```tsx
+<Live2DModel
+  modelJsonPath="/models/Haru/Haru.model3.json"
+  onHitZone={({ hitAreas, originalEvent }) => {
+    console.log('clicked:', hitAreas); // e.g. ['Head']
+    if (hitAreas.includes('Head')) {
+      motionManager.setRandomExpression();
+    }
+  }}
+>
+  ...
+</Live2DModel>
+```
 
 ---
 

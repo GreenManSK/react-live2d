@@ -1,7 +1,13 @@
 import {useLive2DModelContext} from '@react-live2d';
 import {useEffect, useState} from 'react';
 
-export const ModelControls = () => {
+type Props = {
+    hitZonesEnabled: boolean;
+    onToggleHitZones: (enabled: boolean) => void;
+    lastHitAreas: string[];
+};
+
+export const ModelControls = ({hitZonesEnabled, onToggleHitZones, lastHitAreas}: Props) => {
     const {motionManager} = useLive2DModelContext();
 
     const [lookAtMouse, setLookAtMouse] = useState(true);
@@ -15,6 +21,7 @@ export const ModelControls = () => {
     const [scale, setScale] = useState(1.0);
     const [positionX, setPositionX] = useState(0.0);
     const [positionY, setPositionY] = useState(0.0);
+    const [showHitAreas, setShowHitAreas] = useState(false);
 
     useEffect(() => {
         if (!motionManager || lookAtMouse) {
@@ -43,6 +50,13 @@ export const ModelControls = () => {
         }
         motionManager.setPosition(positionX, positionY);
     }, [motionManager, positionX, positionY]);
+
+    useEffect(() => {
+        if (!motionManager) {
+            return;
+        }
+        motionManager.setShowHitAreas(showHitAreas);
+    }, [motionManager, showHitAreas]);
 
     useEffect(() => {
         if (!motionManager) {
@@ -236,6 +250,39 @@ export const ModelControls = () => {
                     />
                     {positionY.toFixed(2)}
                 </label>
+            </div>
+            <h3 className="block text-lg font-bold">Hit Zones</h3>
+            <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-2">
+                    <input
+                        type="checkbox"
+                        checked={hitZonesEnabled}
+                        onChange={(e) => onToggleHitZones(e.target.checked)}
+                    />
+                    Enable hit zone detection
+                </label>
+                <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={showHitAreas} onChange={(e) => setShowHitAreas(e.target.checked)} />
+                    Show hit area outlines
+                </label>
+                <div className="text-sm">
+                    <span className="font-semibold">Available areas: </span>
+                    {motionManager.getHitAreaNames().length === 0 ? (
+                        <span className="text-gray-400 italic">none defined in model</span>
+                    ) : (
+                        motionManager.getHitAreaNames().join(', ')
+                    )}
+                </div>
+                {hitZonesEnabled && (
+                    <div className="text-sm">
+                        <span className="font-semibold">Last click: </span>
+                        {lastHitAreas.length === 0 ? (
+                            <span className="text-gray-400 italic">click the model</span>
+                        ) : (
+                            <span className="text-green-300">{lastHitAreas.join(', ')}</span>
+                        )}
+                    </div>
+                )}
             </div>
         </>
     );

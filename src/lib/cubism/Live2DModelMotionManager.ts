@@ -67,4 +67,22 @@ export class Live2DModelMotionManager {
     public setPosition(x: number, y: number): void {
         this.modelManager.setPosition(x, y);
     }
+
+    public getHitAreaNames(): string[] {
+        return this.modelManager.getHitAreaNames();
+    }
+
+    /**
+     * Hit-test the model at the given page coordinates.
+     * pageX/pageY should be absolute page coordinates (event.clientX + window.scrollX).
+     * Returns the names of all hit areas that contain the point.
+     */
+    public hitTest(pageX: number, pageY: number): string[] {
+        return this.modelManager.hitTest(pageX, pageY);
+    }
+
+    /** Draw bounding-box overlays for all defined hit areas on the canvas. */
+    public setShowHitAreas(show: boolean): void {
+        this.modelManager.setShowHitAreas(show);
+    }
 }

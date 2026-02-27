@@ -5,6 +5,7 @@ import type {Live2DModelManager} from '../cubism/Live2DModelManager';
 
 export type ILive2DCanvasContext = {
     gl?: WebGL2RenderingContext;
+    canvas?: HTMLCanvasElement | null;
     setCanvas: (canvas: HTMLCanvasElement | null) => void;
     textureManager?: Live2DTextureManager;
     addModel: (model: Live2DModelManager) => void;
@@ -13,6 +14,7 @@ export type ILive2DCanvasContext = {
 
 const defaultCanvasContext: ILive2DCanvasContext = {
     gl: undefined,
+    canvas: undefined,
     setCanvas: () => {},
     textureManager: undefined,
     addModel: () => {},
