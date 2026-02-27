@@ -3,7 +3,7 @@
   "homepage": "https://github.com/GreenManSK/react-live2d",
   "author": "GreenManSK <lukas.kurcik@gmail.com>",
   "private": false,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "files": [
     "dist"
