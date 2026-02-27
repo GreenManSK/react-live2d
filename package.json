@@ -51,6 +51,7 @@
     "react-dom": ">=18.2.0"
   },
   "dependencies": {
+    "fflate": "^0.8.2",
     "lodash": "^4.17.21"
   },
   "devDependencies": {

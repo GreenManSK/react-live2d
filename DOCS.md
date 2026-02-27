@@ -153,12 +153,18 @@ useEffect(() => {
 
 ### Live2DModel
 
-Loads a Live2D model from a `.model3.json` file and registers it for rendering on the parent canvas.
+Loads a Live2D model and registers it for rendering on the parent canvas. Accepts either a `.model3.json` URL or a `.zip` archive URL.
 
 ```tsx
 import { Live2DModel } from 'react-live2d';
 
+// Load from a .model3.json file
 <Live2DModel modelJsonPath="/models/Haru/Haru.model3.json">
+  {/* Access motionManager here */}
+</Live2DModel>
+
+// Load from a ZIP archive
+<Live2DModel modelZipPath="/models/Haru.zip">
   {/* Access motionManager here */}
 </Live2DModel>
 ```
@@ -167,7 +173,8 @@ import { Live2DModel } from 'react-live2d';
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
-| `modelJsonPath` | `string` | Yes | URL or path to the `.model3.json` settings file for the model. Supports both relative paths and absolute URLs (e.g. `https://…`). |
+| `modelJsonPath` | `string` | One of | URL or path to the `.model3.json` settings file. Supports relative paths and absolute URLs. Required unless `modelZipPath` is provided. |
+| `modelZipPath` | `string` | One of | URL or path to a `.zip` archive containing the model and all its assets. Required unless `modelJsonPath` is provided. |
 | `scale` | `number` | No | Uniform scale multiplier. `1.0` = default size, `2.0` = double size. Default: `1.0`. |
 | `positionX` | `number` | No | Horizontal offset in NDC units (±1 = half canvas width). `0` = centered. Default: `0`. |
 | `positionY` | `number` | No | Vertical offset in NDC units (±1 = half canvas height, +Y = up). `0` = centered. Default: `0`. |
@@ -175,6 +182,34 @@ import { Live2DModel } from 'react-live2d';
 | `showHitAreas` | `boolean` | No | Draw cyan bounding-box outlines for all defined hit areas on the canvas. Useful for debugging. Default: `false`. |
 | `onLoad` | `() => void` | No | Called once the model has fully loaded and is ready to render. |
 | `onError` | `(error: Error) => void` | No | Called if loading the model fails (network error, CORS, invalid file, etc.). |
+
+**ZIP archive format**
+
+A ZIP file loaded via `modelZipPath` must contain exactly one `.model3.json` file. All other model assets (geometry, textures, motions, expressions, etc.) must be present in the archive with paths relative to that `.model3.json`. Both flat layouts and subdirectory layouts are supported:
+
+```
+# Flat layout (model3.json at root)
+Haru.zip/
+  Haru.model3.json
+  Haru.model3
+  Haru.2048/
+    texture_00.png
+  motions/
+    Haru_m01.motion3.json
+  expressions/
+    f01.exp3.json
+
+# Subdirectory layout (model3.json inside a folder)
+Haru.zip/
+  Haru/
+    Haru.model3.json
+    Haru.model3
+    ...
+```
+
+All assets referenced in the `.model3.json` are resolved relative to its directory within the archive. Motion sound files bundled in the ZIP will also play correctly.
+
+> **Note**: ZIP files are fully extracted in memory using `fflate`. Individual assets are served via object blob URLs, which are revoked automatically when the model is unmounted.
 
 **`HitZoneEvent`**
 
@@ -199,24 +234,25 @@ Use `motionManager.getHitAreaNames()` to query which hit areas a model defines a
 
 **Behavior**
 
-- Fetches and parses the `.model3.json` file. The path is resolved as a URL, so both relative paths (`./models/Haru/Haru.model3.json`) and absolute URLs (`https://example.com/model/model.model3.json`) are supported. All linked assets (model geometry, textures, motions, etc.) are resolved relative to the `.model3.json` URL.
+- When `modelJsonPath` is provided: fetches and parses the `.model3.json` file. Both relative paths (`./models/Haru/Haru.model3.json`) and absolute URLs (`https://example.com/model/model.model3.json`) are supported. All linked assets are resolved relative to the `.model3.json` URL.
+- When `modelZipPath` is provided: fetches and decompresses the ZIP archive entirely in memory, locates the `.model3.json`, then loads all model assets directly from the extracted data. No server-side extraction is required.
 - Sequentially loads: model geometry, expressions, physics, pose, user data, eye blink setup, breath setup, lip sync setup, layout, motions, and textures.
 - Calls `onLoad` once the model finishes loading, or `onError` if any step in the critical loading path fails.
 - Once fully loaded, registers the model with `Live2DCanvas` for rendering.
 - Provides a `motionManager` via `Live2DModelContext` to child components.
-- Removes the model from the canvas on unmount.
+- Removes the model from the canvas on unmount. Blob URLs created for ZIP assets are revoked at this point.
 
-> **Cross-Origin (CORS)**: When loading from an external URL, the server must include appropriate CORS headers (`Access-Control-Allow-Origin`). Without them, the fetch and/or texture loads will fail and `onError` will be called.
+> **Cross-Origin (CORS)**: When loading from an external URL (JSON or ZIP), the server must include appropriate CORS headers (`Access-Control-Allow-Origin`). Without them, the fetch will fail and `onError` will be called.
 
 **Multiple models**
 
-Multiple `Live2DModel` components can be rendered on the same canvas simultaneously:
+Multiple `Live2DModel` components can be rendered on the same canvas simultaneously. Models can be loaded from different sources:
 
 ```tsx
 <Live2DCanvas>
   <canvas ref={...} />
   <Live2DModel modelJsonPath="/models/Haru/Haru.model3.json" />
-  <Live2DModel modelJsonPath="/models/Hiyori/Hiyori.model3.json" />
+  <Live2DModel modelZipPath="/models/Hiyori.zip" />
 </Live2DCanvas>
 ```
 
@@ -534,7 +570,7 @@ const App = () => {
             )}
           </Live2DCanvasContext.Consumer>
 
-          <Live2DModel modelJsonPath="/models/Haru/Haru.model3.json">
+          <Live2DModel modelJsonPath="/models/Haru/Haru.model3.json" onLoad={() => console.log('loaded')}>
             <ModelControls />
           </Live2DModel>
         </div>

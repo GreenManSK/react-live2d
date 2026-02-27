@@ -14,6 +14,8 @@ import type {CubismViewMatrix} from '@cubism/math/cubismviewmatrix';
 import {Live2DCubismUserModel} from '../cubism/Live2DCubismUserModel';
 import type {Live2DTextureManager} from './Live2DTextureManager';
 import {Live2DLipSyncManager} from './Live2DLipSyncManager';
+import type {ModelFileSystem} from '../utils/ModelFileSystem';
+import {UrlModelFileSystem} from '../utils/ModelFileSystem';
 
 type Orientation = {
     x: number;
@@ -83,7 +85,8 @@ export class Live2DModelManager {
         public readonly modelJsonPath: string,
         public readonly settings: ICubismModelSetting,
         private readonly gl: WebGLRenderingContext,
-        private readonly textureManager: Live2DTextureManager
+        private readonly textureManager: Live2DTextureManager,
+        private readonly fileSystem: ModelFileSystem
     ) {
         this.model = new Live2DCubismUserModel();
 
@@ -316,6 +319,7 @@ export class Live2DModelManager {
 
     public dispose(): void {
         this.lipSyncManager.dispose();
+        this.fileSystem.dispose();
     }
 
     public setScale(scale: number) {
@@ -533,20 +537,14 @@ export class Live2DModelManager {
         return {transformedX, transformedY};
     }
 
-    private resolveFilePath(fileName: string): string {
-        return new URL(fileName, new URL(this.modelJsonPath, document.baseURI).href).href;
-    }
-
     private loadModelFile(): Promise<void> {
         if (!this.settings?.getModelFileName()) {
             console.warn('Model file not found');
             return Promise.resolve();
         }
-        return Live2DModelManager.fetchArrayBuffer(this.resolveFilePath(this.settings.getModelFileName())).then(
-            (arrayBuffer) => {
-                this.model.loadModel(arrayBuffer);
-            }
-        );
+        return this.fileSystem.fetchFile(this.settings.getModelFileName()).then((arrayBuffer) => {
+            this.model.loadModel(arrayBuffer);
+        });
     }
 
     private loadExpressions(): Promise<void> {
@@ -559,16 +557,14 @@ export class Live2DModelManager {
                 const expressionName = this.settings.getExpressionName(i);
                 const expressionFileName = this.settings.getExpressionFileName(i);
                 fetchPromises.push(
-                    Live2DModelManager.fetchArrayBuffer(this.resolveFilePath(expressionFileName)).then(
-                        (arrayBuffer) => {
-                            const expression = this.model.loadExpression(
-                                arrayBuffer,
-                                arrayBuffer.byteLength,
-                                expressionName
-                            );
-                            this.expressions.set(expressionName, expression);
-                        }
-                    )
+                    this.fileSystem.fetchFile(expressionFileName).then((arrayBuffer) => {
+                        const expression = this.model.loadExpression(
+                            arrayBuffer,
+                            arrayBuffer.byteLength,
+                            expressionName
+                        );
+                        this.expressions.set(expressionName, expression);
+                    })
                 );
             }
             Promise.all(fetchPromises).then(() => resolve());
@@ -578,12 +574,10 @@ export class Live2DModelManager {
     private loadPhysics(): Promise<void> {
         return new Promise((resolve) => {
             if (this.settings?.getPhysicsFileName()) {
-                Live2DModelManager.fetchArrayBuffer(this.resolveFilePath(this.settings.getPhysicsFileName())).then(
-                    (arrayBuffer) => {
-                        this.model.loadPhysics(arrayBuffer, arrayBuffer.byteLength);
-                        resolve();
-                    }
-                );
+                this.fileSystem.fetchFile(this.settings.getPhysicsFileName()).then((arrayBuffer) => {
+                    this.model.loadPhysics(arrayBuffer, arrayBuffer.byteLength);
+                    resolve();
+                });
             } else {
                 console.warn('Physics file not found');
                 resolve();
@@ -594,12 +588,10 @@ export class Live2DModelManager {
     private loadPose(): Promise<void> {
         return new Promise((resolve) => {
             if (this.settings?.getPoseFileName()) {
-                Live2DModelManager.fetchArrayBuffer(this.resolveFilePath(this.settings.getPoseFileName())).then(
-                    (arrayBuffer) => {
-                        this.model.loadPose(arrayBuffer, arrayBuffer.byteLength);
-                        resolve();
-                    }
-                );
+                this.fileSystem.fetchFile(this.settings.getPoseFileName()).then((arrayBuffer) => {
+                    this.model.loadPose(arrayBuffer, arrayBuffer.byteLength);
+                    resolve();
+                });
             } else {
                 console.warn('Pose file not found');
                 resolve();
@@ -610,12 +602,10 @@ export class Live2DModelManager {
     private loadUserData(): Promise<void> {
         return new Promise((resolve) => {
             if (this.settings?.getUserDataFile()) {
-                Live2DModelManager.fetchArrayBuffer(this.resolveFilePath(this.settings.getUserDataFile())).then(
-                    (arrayBuffer) => {
-                        this.model.loadUserData(arrayBuffer, arrayBuffer.byteLength);
-                        resolve();
-                    }
-                );
+                this.fileSystem.fetchFile(this.settings.getUserDataFile()).then((arrayBuffer) => {
+                    this.model.loadUserData(arrayBuffer, arrayBuffer.byteLength);
+                    resolve();
+                });
             } else {
                 console.warn('User data file not found');
                 resolve();
@@ -650,10 +640,10 @@ export class Live2DModelManager {
             // Store resolved sound URL for this motion if one is defined.
             const soundFileName = this.settings.getMotionSoundFileName(group, i);
             if (soundFileName) {
-                this.motionSoundUrls.set(name, this.resolveFilePath(soundFileName));
+                this.motionSoundUrls.set(name, this.fileSystem.getFileUrl(soundFileName));
             }
             motionPromises.push(
-                Live2DModelManager.fetchArrayBuffer(this.resolveFilePath(motionFileName)).then((arrayBuffer) => {
+                this.fileSystem.fetchFile(motionFileName).then((arrayBuffer) => {
                     const motion = this.model.loadMotion(
                         arrayBuffer,
                         arrayBuffer.byteLength,
@@ -746,7 +736,7 @@ export class Live2DModelManager {
                 console.warn(`Issue getting texture ${i}`);
                 continue;
             }
-            const texturePath = this.resolveFilePath(textureFileName);
+            const texturePath = this.fileSystem.getFileUrl(textureFileName);
             texturePromises.push(
                 this.textureManager.loadTextureFromFile(texturePath, true).then((texture) => {
                     this.model.getRenderer().bindTexture(i, texture.texture);
@@ -764,13 +754,24 @@ export class Live2DModelManager {
         gl: WebGLRenderingContext,
         textureManager: Live2DTextureManager
     ): Promise<Live2DModelManager> {
-        return Live2DModelManager.fetchArrayBuffer(modelJsonPath).then((arrayBuffer) => {
+        return Live2DModelManager.fetchRaw(modelJsonPath).then((arrayBuffer) => {
             const settings = new CubismModelSettingJson(arrayBuffer, arrayBuffer.byteLength);
-            return new Live2DModelManager(modelJsonPath, settings, gl, textureManager);
+            const fileSystem = new UrlModelFileSystem(modelJsonPath);
+            return new Live2DModelManager(modelJsonPath, settings, gl, textureManager, fileSystem);
         });
     }
 
-    private static fetchArrayBuffer(url: string): Promise<ArrayBuffer> {
+    public static getModelManagerFromFileSystem(
+        modelJsonContent: ArrayBuffer,
+        fileSystem: ModelFileSystem,
+        gl: WebGLRenderingContext,
+        textureManager: Live2DTextureManager
+    ): Promise<Live2DModelManager> {
+        const settings = new CubismModelSettingJson(modelJsonContent, modelJsonContent.byteLength);
+        return Promise.resolve(new Live2DModelManager('', settings, gl, textureManager, fileSystem));
+    }
+
+    private static fetchRaw(url: string): Promise<ArrayBuffer> {
         return fetch(url)
             .then((response) => {
                 if (!response.ok) {

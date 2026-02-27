@@ -5,6 +5,7 @@ import {Live2DModelManager} from '../cubism/Live2DModelManager';
 import {Live2DModelMotionManager} from '../cubism/Live2DModelMotionManager';
 import {useLive2DCanvasContext} from '../Live2DCanvas/useLive2DCanvasContext';
 import {Live2DModelContext} from './useLive2DModelContext';
+import {ZipModelFileSystem} from '../utils/ZipModelFileSystem';
 
 export type HitZoneEvent = {
     /** Names of all hit areas that contain the clicked point. */
@@ -16,7 +17,10 @@ export type HitZoneEvent = {
 };
 
 export type Props = {
-    modelJsonPath: string;
+    /** URL or path to the .model3.json settings file. Required unless modelZipPath is provided. */
+    modelJsonPath?: string;
+    /** URL or path to a .zip archive containing the model and all its assets. Required unless modelJsonPath is provided. */
+    modelZipPath?: string;
     scale?: number;
     positionX?: number;
     positionY?: number;
@@ -32,6 +36,7 @@ export type Props = {
 
 export const Live2DModel = ({
     modelJsonPath,
+    modelZipPath,
     scale,
     positionX,
     positionY,
@@ -51,8 +56,16 @@ export const Live2DModel = ({
         if (!gl || !textureManager) {
             return;
         }
-        Live2DModelManager.getModelManager(modelJsonPath, gl, textureManager)
-            .then((modelManager) => modelManager.loadModel())
+        const loadPromise = modelZipPath
+            ? ZipModelFileSystem.fromUrl(modelZipPath).then(({fs, modelJsonBuffer}) =>
+                  Live2DModelManager.getModelManagerFromFileSystem(modelJsonBuffer, fs, gl, textureManager)
+              )
+            : modelJsonPath
+              ? Live2DModelManager.getModelManager(modelJsonPath, gl, textureManager)
+              : Promise.reject(new Error('Either modelJsonPath or modelZipPath must be provided'));
+
+        loadPromise
+            .then((manager) => manager.loadModel())
             .then((finishedModelManager) => {
                 setModelManager(finishedModelManager);
                 onLoadRef.current?.();
@@ -62,7 +75,7 @@ export const Live2DModel = ({
                 console.error('Failed to load Live2D model:', err);
                 onErrorRef.current?.(err);
             });
-    }, [modelJsonPath, gl, textureManager]);
+    }, [modelJsonPath, modelZipPath, gl, textureManager]);
     useEffect(() => {
         if (!modelManager) {
             return;
